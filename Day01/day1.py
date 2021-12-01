@@ -34,3 +34,9 @@ data = pd.read_csv("Day01/data.txt", header = None, names = ["depth"])
 data = data.rolling(window=3).sum()
 data["next_depth"] = data.depth.shift(-1) 
 print(data[data.next_depth > data.depth].shape[0])
+
+
+#Part 2
+data = pd.read_csv("Day01/data.txt", header = None, names = ["depth"])
+data["next_depth"] = data.depth.shift(-3) 
+print(data[data.next_depth > data.depth].shape[0])
