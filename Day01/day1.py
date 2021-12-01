@@ -1,4 +1,6 @@
+import pandas as pd
 from typing import List
+
 
 def read_file(filename) -> List[int]:
   with open(filename) as f:
@@ -19,5 +21,16 @@ def part2():
   bigger = len([z for z in window_tuples if z[1]>z[0]])
   print(bigger)
 
-part1()
-part2()
+part1()  #1715
+part2()  #1739
+
+#Part 1
+data = pd.read_csv("Day01/data.txt", header = None, names = ["depth"])
+data["next_depth"] = data.depth.shift(-1) 
+print(data[data.next_depth > data.depth].shape[0])
+
+#Part 2
+data = pd.read_csv("Day01/data.txt", header = None, names = ["depth"])
+data = data.rolling(window=3).sum()
+data["next_depth"] = data.depth.shift(-1) 
+print(data[data.next_depth > data.depth].shape[0])
