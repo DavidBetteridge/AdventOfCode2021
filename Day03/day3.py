@@ -1,6 +1,5 @@
-from os import read
+import pandas as pd
 from typing import List
-
 
 def read_file(filename) -> List[str]:
   with open(filename) as f:
@@ -47,11 +46,30 @@ print(oxygen_generator_rating, co2_scrubber_rating)
 print(oxygen_generator_rating * co2_scrubber_rating)
 
 
-import pandas as pd
 data = pd.read_fwf("Day03/data.txt", widths=[1]*12, header = None)
-min_number_of_reports = data.shape[0]
+min_number_of_ones = data.shape[0] / 2
 result = data.sum().to_frame(name="ones")
-result["bit"] = result.apply(lambda row: "1" if row.ones >= (min_number_of_reports/2) else "0", axis=1)
+result["bit"] = result.apply(lambda row: "1" if row.ones >= min_number_of_ones else "0", axis=1)
 lhs = int("".join(result.bit),2)
 rhs = lhs ^ int('111111111111', 2)
 print(lhs * rhs)
+
+
+def reduce(data, rule, offset=0):
+  rows = data.shape[0]
+  if rows == 1:
+    return data
+
+  ones = data[offset].sum()
+  match = rule(ones, rows)
+  return reduce(data.loc[data[offset] == match], rule, offset+1)
+
+
+data = pd.read_fwf("Day03/data.txt", widths=[1]*12, header = None)
+matching_row = reduce(data, rule = lambda ones, rows : 1 if ones >= (rows/2) else 0)
+oxygen_generator_rating = int("".join(map(str,matching_row.iloc[0])),2)
+
+matching_row = reduce(data, rule = lambda ones, rows : 1 if ones < (rows/2) else 0)
+co2_scrubber_rating = int("".join(map(str,matching_row.iloc[0])),2)
+
+print(oxygen_generator_rating * co2_scrubber_rating)
