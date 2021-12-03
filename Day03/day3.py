@@ -19,3 +19,29 @@ lhs = int(lhs, 2)
 rhs = lhs ^ int('111111111111', 2)
 print(lhs * rhs)
 
+
+lines = read_file("Day03/data.txt")
+for offset in range(12):
+  ones = 0
+  for line in lines:
+      ones += int(line[offset])
+  zeros = len(lines) - ones
+  most_common = "1" if ones >= zeros else "0"
+  lines = [line for line in lines if line[offset] == most_common]
+oxygen_generator_rating = int(lines[0],2)
+
+
+lines = read_file("Day03/data.txt")
+for offset in range(12):
+  ones = 0
+  for line in lines:
+      ones += int(line[offset])
+  zeros = len(lines) - ones
+  least_common = "0" if zeros <= ones else "1"
+  lines = [line for line in lines if line[offset] == least_common]
+  if len(lines) == 1:
+    break
+co2_scrubber_rating = int(lines[0],2)
+
+print(oxygen_generator_rating, co2_scrubber_rating)
+print(oxygen_generator_rating * co2_scrubber_rating)
