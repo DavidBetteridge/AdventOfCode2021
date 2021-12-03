@@ -45,3 +45,13 @@ co2_scrubber_rating = int(lines[0],2)
 
 print(oxygen_generator_rating, co2_scrubber_rating)
 print(oxygen_generator_rating * co2_scrubber_rating)
+
+
+import pandas as pd
+data = pd.read_fwf("Day03/data.txt", widths=[1]*12, header = None)
+min_number_of_reports = data.shape[0]
+result = data.sum().to_frame(name="ones")
+result["bit"] = result.apply(lambda row: "1" if row.ones >= (min_number_of_reports/2) else "0", axis=1)
+lhs = int("".join(result.bit),2)
+rhs = lhs ^ int('111111111111', 2)
+print(lhs * rhs)
