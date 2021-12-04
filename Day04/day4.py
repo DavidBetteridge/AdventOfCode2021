@@ -45,21 +45,21 @@ def read_file() -> Tuple[List[int], List]:
   return calls, boards
 
 
-def play(calls, boards, number_of_renaming_boards_needed):
-  remainining_boards = set([b for b in range(len(boards))])
+def play(calls, boards, number_of_remaining_boards_needed):
+  remaining_boards = set([b for b in range(len(boards))])
   for call in calls:
     for board_number, board in enumerate(boards):
-      if board_number in remainining_boards:
+      if board_number in remaining_boards:
         for row in board:
-          for i in range(len(row)):
-            if row[i] == call:
-              row[i] = ""
+          for column in range(len(row)):
+            if row[column] == call:
+              row[column] = ""
               if is_winning_board(board):
-                remainining_boards.remove(board_number)
-                if len(remainining_boards) == number_of_renaming_boards_needed:
+                remaining_boards.remove(board_number)
+                if len(remaining_boards) == number_of_remaining_boards_needed:
                   print(score_board(board) * call) 
                   return
 
 calls, boards = read_file()
-play(calls, boards, number_of_renaming_boards_needed = len(boards) - 1)  #6592
-play(calls, boards, number_of_renaming_boards_needed = 0)    #31755
+play(calls, boards, number_of_remaining_boards_needed = len(boards) - 1)  #6592
+play(calls, boards, number_of_remaining_boards_needed = 0)    #31755
