@@ -25,3 +25,16 @@ def solve(fish, days_remaining):
 
 fish = read_file()
 print(solve(fish, 256))   #1650309278600
+
+
+
+# Dynamic programming
+dp = {(value,0): 1 for value in range(0,9)}
+for day in range (1,257):
+  for value in range(0,9):
+    if value == 0:
+      dp[(value,day)] = dp[(6,day-1)] + dp[(8,day-1)]
+    else:
+      dp[(value,day)] = dp[(value-1,day-1)]
+
+print(sum( [dp[(start_number, 256)] for start_number in fish]))
