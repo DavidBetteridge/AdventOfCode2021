@@ -38,3 +38,19 @@ for day in range (1,257):
       dp[(value,day)] = dp[(value-1,day-1)]
 
 print(sum( [dp[(start_number, 256)] for start_number in fish]))
+
+
+
+counts = Counter(fish)
+qty = [0] * 9
+for i in range(9):
+  qty[i] = counts[i]
+
+for day in range(256):
+  qty[(day+7)%9] += qty[day%9]
+
+print(sum(qty))
+
+
+
+
