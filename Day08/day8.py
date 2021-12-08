@@ -1,9 +1,11 @@
 from typing import Counter, List, Tuple
 
+def sort_values(values: List[str]) -> str:
+  return ["".join(sorted(value)) for value in values]
 
 def parse_line(line:str) -> Tuple[List[str], List[str]]:
   all_inputs, all_outputs = line.split(" | ")
-  return all_inputs.strip().split(" "), all_outputs.strip().split(" ")
+  return sort_values(all_inputs.strip().split(" ")), sort_values(all_outputs.strip().split(" "))
 
 def read_file() -> List[Tuple[List[str], List[str]]]:
   with open("Day08/data.txt") as f:
@@ -28,24 +30,17 @@ def where(all_possibilities: List[str],
               if len(o) == length_is and \
                  all(must in o for must in must_contain) and \
                  not any(must in o for must in must_not_contain)]
-  return "".join(sorted(set(possible[0])))
+  return possible[0]
 
 def solve_line(inputs, outputs):
-  all_possibilities = inputs + outputs
-  unique = set(["".join(sorted(set(a))) for a in all_possibilities])
-  counts = Counter("".join(unique))  
+  all_possibilities = set(inputs + outputs)
+  counts = Counter("".join(all_possibilities))  
 
   # b is the letter which is in exactly 6 segments
-  for k in counts:
-    if counts[k] == 6:
-      segment_b = k
-      break
+  segment_b = [k for k in counts if counts[k] == 6][0]
 
   # e is the letter which is in exactly 4 segments
-  for k in counts:
-    if counts[k] == 4:
-      segment_e = k
-      break
+  segment_e = [k for k in counts if counts[k] == 4][0]
 
   mapping = {}
   mapping[1] = where(all_possibilities, length_is=2)
@@ -58,14 +53,15 @@ def solve_line(inputs, outputs):
   mapping[9] = where(all_possibilities, length_is=6, must_not_contain=[segment_e])
   segment_d = set(mapping[4]).difference(set(mapping[1])).difference([segment_b]).pop()
   mapping[0] = where(all_possibilities, length_is=6, must_not_contain=[segment_d])
-  mapping[6] = unique.difference([mapping[0], mapping[1], mapping[2], mapping[3],
+  mapping[6] = all_possibilities.difference([mapping[0], mapping[1], mapping[2], mapping[3],
                                               mapping[4], mapping[5], mapping[7],
                                               mapping[8], mapping[9]]).pop()
-  mapping = {v:str(k) for k,v in sorted(mapping.items())}
+  mapping = {v:str(k) for k,v in mapping.items()}
 
-  return int("".join(mapping["".join(sorted(o))] for o in outputs))
+  return int("".join(mapping[o] for o in outputs))
 
 
-lines = read_file()
-running_total = sum(solve_line(inputs, outputs) for inputs, outputs in lines)
-print(running_total)  #1091609
+def part2():
+  lines = read_file()
+  running_total = sum(solve_line(inputs, outputs) for inputs, outputs in lines)
+  print(running_total)  #1091609
