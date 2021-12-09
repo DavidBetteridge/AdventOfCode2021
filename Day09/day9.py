@@ -40,28 +40,21 @@ def part1():
   print(result)  #572
 
 
-def node_id(column, row):
-  return f"{column},{row}"
 
 data = read_file("Day09/data.txt")
 rows = data.shape[0]
 columns = data.shape[1]
 G = nx.Graph()
 
-links = []
-for row in range(rows):
-  for col in range(columns):
-    cell = data[col][row]
-    if cell != 9:
-      G.add_node(node_id(col, row), value=cell)
-      if row > 0 and data[col][row -1] != 9:
-        links.append((node_id(col, row), node_id(col, row -1)))
-      if col > 0 and data[col-1][row] != 9:
-        links.append((node_id(col, row), node_id(col -1, row)))
+for row in range(1, rows):
+  for col in range(1, columns):
+    if data[col][row] != 9:
+      if data[col][row -1] != 9:
+        G.add_edge((col, row), (col, row -1))
 
-for link in links:
-  G.add_edge(*link)
+      if data[col-1][row] != 9:
+        G.add_edge((col, row), (col -1, row))
 
 basins = [len(G.subgraph(c)) for c in nx.connected_components(G)]
 three_largest = sorted(basins)[-3:]
-print(math.prod(three_largest))
+print(math.prod(three_largest))     #847044
