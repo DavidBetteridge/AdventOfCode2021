@@ -1,3 +1,4 @@
+import re
 import statistics
 from typing import List
 
@@ -60,3 +61,40 @@ def part2(lines: List[str]):
 lines = read_file("day10/data.txt")
 part1(lines)
 part2(lines)
+
+
+def part1_no_stack(line):
+  a = line
+  b = ""
+  while a != b:
+    b = a
+    a = a.replace("()", "")
+    a = a.replace("[]", "")
+    a = a.replace("{}", "")
+    a = a.replace("<>", "")
+  
+  first_close = min([location for c in closing
+                     if (location := a.find(c)) != -1],
+                    default=None)
+  if first_close:
+    return closing[a[first_close]][1]
+  return 0
+
+print(sum(part1_no_stack(line) for line in lines))
+
+
+def part2_no_stack(line):
+  while line != (line := re.sub('(\[])|({})|(\(\))|(<>)', '', line)):
+    pass
+  
+  if not any([c in line for c in [")","]","}",">"]]):
+    return sum([["", "(","[","{","<"].index(t) * 5**i for i, t in enumerate(line)])
+  return 0
+
+results = [score for line in lines if (score := part2_no_stack(line)) != 0]
+print(statistics.median(results))  #1190420163
+
+
+
+
+
