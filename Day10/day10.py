@@ -1,36 +1,62 @@
+import statistics
 from typing import List
-
 
 def read_file(filename: str) -> List[str]:
   with open(filename) as f:
-    return f.readlines()
+    lines = f.readlines()
+    return [line.strip() for line in lines]
 
-pairs = {
-  ")" : "(",
-  "]" : "[",
-  "}" : "{",
-  ">" : "<"  
-}
+opening = {
+    "(" : 1,
+    "[" : 2,
+    "{" : 3,
+    "<" : 4
+  }
 
 closing = {
-  ")" : 3,
-  "]" : 57,
-  "}" : 1197,
-  ">" : 25137
+  ")" : ("(", 3),
+  "]" : ("[", 57),
+  "}" : ("{", 1197),
+  ">" : ("<",  25137)
 }
 
-def check_line(line: str) -> int:
-  s = []
-  for c in line:
-    if not c in closing:
-      s.append(c)
-    else:
-      top = s.pop()
-      if top != pairs[c]:
-        return closing[c]
-  return 0
+def part1(lines: List[str]):
 
+  def score_corrupted_line(line: str) -> int:
+    s = []
+    for c in line:
+      if c in opening:
+        s.append(c)
+      else:
+        expected_opening, score = closing[c]
+        if s.pop() != expected_opening:
+          return score
+    return 0
+
+  result = sum(score_corrupted_line(line) for line in lines)
+  print(result)     #389589
+
+
+def part2(lines: List[str]):
+  def score_to_complete_line(line: str) -> int:
+    s = []
+    for c in line:
+      if c in opening:
+        s.append(c)
+      else:
+        expected_opening, score = closing[c]
+        if s.pop() != expected_opening:
+          return 0
+    
+    score = 0
+    while len(s) > 0:
+      score *= 5
+      score += opening[s.pop()]
+    return score
+
+  results = [score for line in lines if (score := score_to_complete_line(line)) != 0]
+  print(statistics.median(results))  #1190420163
 
 lines = read_file("day10/data.txt")
-result = sum(check_line(line) for line in lines)
-print(result)
+part1(lines)
+part2(lines)
