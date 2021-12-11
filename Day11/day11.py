@@ -17,7 +17,10 @@ number_of_rows = octopuses.shape[0]
 number_of_columns = octopuses.shape[1]
 
 number_of_flashes = 0
-for step in range(100):
+step = 0
+all_zero = False
+while not all_zero:
+  step += 1
   flashed = set()
 
   for row in range(number_of_rows):
@@ -42,8 +45,18 @@ for step in range(100):
   for column, row in flashed:
     octopuses[column][row] = 0
 
-  print("")
-  print("")
-  print(octopuses)
-print(number_of_flashes)
+  all_zero = True
+  for row in range(number_of_rows):
+    for column in range(number_of_columns):
+      if octopuses[column][row] != 0:
+        all_zero = False
+        break
+
+  if all_zero:
+    print(step)
+
+# print("")
+# print("")
+# print(octopuses)
+# print(number_of_flashes)
 
