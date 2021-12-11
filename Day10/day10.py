@@ -64,20 +64,14 @@ part2(lines)
 
 
 def part1_no_stack(line):
-  a = line
-  b = ""
-  while a != b:
-    b = a
-    a = a.replace("()", "")
-    a = a.replace("[]", "")
-    a = a.replace("{}", "")
-    a = a.replace("<>", "")
+  while line != (line := re.sub('(\[])|({})|(\(\))|(<>)', '', line)):
+    pass
   
   first_close = min([location for c in closing
-                     if (location := a.find(c)) != -1],
+                     if (location := line.find(c)) != -1],
                     default=None)
   if first_close:
-    return closing[a[first_close]][1]
+    return closing[line[first_close]][1]
   return 0
 
 print(sum(part1_no_stack(line) for line in lines))
