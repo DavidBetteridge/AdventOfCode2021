@@ -23,23 +23,23 @@ def build_neighbours(octopuses):
         if (0 <= column + col_offset < number_of_columns) and \
             (0 <= row + row_offset < number_of_rows):                
           df[column + col_offset][row + row_offset] = 1
-      neighbours_df[(column, row)] = df
+      neighbours_df[len(neighbours_df)] = df.to_numpy().flatten()
   return neighbours_df
 
-def iterate(octopuses: pd.DataFrame, flashed, neighbours_dfs) -> Tuple[pd.DataFrame, int]:
-  number_of_rows, number_of_columns = octopuses.shape
+def iterate(octopuses: np.array, flashed, neighbours_dfs) -> Tuple[np.array, int]:
+  number_of_rows = len(octopuses)
   number_of_flashes = 0
-  for row in range(number_of_rows):
-    for column in range(number_of_columns):
-      if octopuses[column][row] > 9 and (column, row) not in flashed:
-        number_of_flashes += 1
-        flashed.add((column, row))
-        octopuses = octopuses.add(neighbours_dfs[(column, row)])
+  for idx in range(number_of_rows):
+    if octopuses[idx] > 9 and idx not in flashed:
+      number_of_flashes += 1
+      flashed.add(idx)
+      octopuses = octopuses + neighbours_dfs[idx]
   return octopuses, number_of_flashes
 
 
 def part1(octopuses):
   neighbours_dfs = build_neighbours(octopuses)
+  octopuses = octopuses.to_numpy().flatten()
   number_of_flashes = 0
   for _ in range(100):
 
@@ -51,16 +51,18 @@ def part1(octopuses):
       octopuses, new_flashes = iterate(octopuses, flashed, neighbours_dfs)
       number_of_flashes += new_flashes
 
-    for column, row in flashed: #3
-      octopuses[column][row] = 0
+    for idx in flashed: #3
+      octopuses[idx] = 0
 
   assert number_of_flashes == 1601
 
 
 def part2(octopuses):
   neighbours_dfs = build_neighbours(octopuses)
+  octopuses = octopuses.to_numpy().flatten()
+
   step = 0
-  while not all((octopuses == 0).all()):
+  while not all(octopuses == 0):
     step += 1
 
     octopuses+=1 #1
@@ -70,8 +72,8 @@ def part2(octopuses):
     while new_flashes > 0:
       octopuses, new_flashes = iterate(octopuses, flashed, neighbours_dfs)
 
-    for column, row in flashed: #3
-      octopuses[column][row] = 0
+    for idx in flashed: #3
+      octopuses[idx] = 0
 
   assert step == 368
 
