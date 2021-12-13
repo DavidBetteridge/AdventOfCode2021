@@ -15,7 +15,9 @@ def read_file(filename: str):
         x,y = line.strip().split(",")
         points.append((int(x),int(y)))
       else:
-        folds.append(line)
+        rubbish, action = line.strip().split("fold along ")
+        direction, distance = action.split("=")
+        folds.append((direction, distance))
     return points, folds
 
 def create_dataframe(points: List[Tuple[int,int]]) -> pd.DataFrame:
@@ -26,64 +28,55 @@ def create_dataframe(points: List[Tuple[int,int]]) -> pd.DataFrame:
     df[x][y] = 1
   return df
 
-def vertical_fold(df, row_number):
-  df_top = df.iloc[:row_number+1,:]
-  df_bottom = df.iloc[row_number:,:]
+def fold_up(df, row_number):
+  # Tear the paper on the folder line
+  df_top = df.iloc[:row_number,:]
+  df_bottom = df.iloc[row_number+1:,:]
 
+  # Flip all the rows on the bottom half vertically
   df_bottom = df_bottom.reindex(index=df_bottom.index[::-1])
   df_bottom.reset_index(drop=True, inplace=True)
 
+  # Make sure both bits of paper are the same size
+  while df_bottom.shape[0] < df_top.shape[0]:
+    df_bottom.loc[-1] = [0] * df.shape[1]
+    df_bottom.index = df_bottom.index + 1
+  df_bottom.sort_index(inplace=True) 
+
+  while df_top.shape[0] < df_bottom.shape[0]:
+    df_top.loc[-1] = [0] * df.shape[1]
+    df_top.index = df_top.index + 1
+  df_top.sort_index(inplace=True) 
+
+  # Combine the dots
   return df_top.add(df_bottom)
+
+def fold_left(df, column_number):
+  df = df.T
+  df = fold_up(df, column_number)
+  df = df.T
+  return df
 
 
 def count_visible_dots(df):
   return df[df >= 1].count().sum()
 
 
-points, folds = read_file("Day13/sample.txt")
+points, folds = read_file("Day13/data.txt")
 paper = create_dataframe(points)
-paper = vertical_fold(paper, 7)
-print(count_visible_dots(paper))
 
+for direction, distance in folds:
+  if direction == "x":
+    paper = fold_left(paper, int(distance))
+  else:
+    paper = fold_up(paper, int(distance))
 
-
-
-
-# columns = df_top.shape[1]
-# rows_top = df_top.shape[0]
-# rows_bottom = df_bottom.shape[0]
-
-# while rows_top > rows_bottom:
-#   # Add rows to bottom
-#   df_bottom.loc[-1] = [0] * columns
-#   df_bottom.index = df_bottom.index + 1  # shifting index
-#   df_bottom.sort_index(inplace=True) 
-#   rows_bottom = df_bottom.shape[0]
-
-# while rows_top < rows_bottom:
-#   # Add rows to top
-#   df_top.loc[-1] = [0] * columns
-#   df_top.index = df_top.index + 1  # shifting index
-#   df_top.sort_index(inplace=True) 
-#   rows_top = df_top.shape[0]
-
-
-# print(df_top)
-# print(df_bottom)
-
-# df = df_top.add(df_bottom)
-
-# visible_dots = df[df >= 1].count().sum()
-
-# print(visible_dots)
-
-
-# df1 = datasX.iloc[:, :72]
-# df2 = datasX.iloc[:, 72:]
-
-
-# data_frame = data_frame.sort_index(axis=1 ,ascending=True)
-# data_frame = data_frame.iloc[::-1]
-
-
-# data_frame = data_frame.reindex(index=data_frame.index[::-1])
+rows, cols = paper.shape
+for row in range(rows):
+  p = ""
+  for col in range(cols):
+    if paper[col][row] == 0:
+      p += " "
+    else:
+      p += "*"
+  print(p) 
