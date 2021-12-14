@@ -1,4 +1,5 @@
-from typing import Counter, Dict, List, Tuple
+from collections import defaultdict
+from typing import Dict, Tuple
 
 
 def read_file(filename: str) -> Tuple[str, Dict[str, str]]:
@@ -8,23 +9,36 @@ def read_file(filename: str) -> Tuple[str, Dict[str, str]]:
     rules = [line.strip().split(" -> ") for line in lines[2:]]
     return template, {rule[0]:rule[1] for rule in rules}
 
-def step(start_from: str):
-  next = ""
-  for ind in range(len(start_from)-1):
-    key = start_from[ind: ind+2]
-    insert_element = rules[key]
-    next += start_from[ind] + insert_element
-  return next + start_from[-1]
 
 template, rules = read_file('Day14/data.txt')
-next = template
-for s in range(10):
-  next = step(next)
 
-c = Counter(next)
-ordered =  c.most_common(None)
-most = ordered[0]
-least = ordered[-1]
-print(most[1] - least[1])
+results_cache = {}
 
+def f(result, aa: str, n: int):
+  if n == 0:
+    result[aa[0]] += 1
+    result[aa[1]] += 1
+  else:
+    if (aa,n) not in results_cache:
+      temp = defaultdict(int)
+      f(temp, aa[0] + rules[aa], n-1)
+      f(temp, rules[aa] + aa[1], n-1)
+      temp[rules[aa]] -=1
+      results_cache[(aa,n)] = temp
+
+    for l in results_cache[(aa,n)]:
+      result[l] += results_cache[(aa,n)][l]
+
+def solve(start_from, n):
+  result = defaultdict(int)
+  for ind in range(len(start_from)-1):
+    key = start_from[ind: ind+2]
+    f(result, key, n)
+    result[key[1]] -=1
+  result[start_from[-1]] +=1
+  return result
+
+counts = solve(template, 40)
+occurs = sorted(counts, key = lambda k : counts[k], reverse=True)
+print(counts[occurs[0]]- counts[occurs[-1]])
 
