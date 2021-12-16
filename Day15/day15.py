@@ -24,16 +24,23 @@ def build_graph(cave: pd.DataFrame) -> nx.DiGraph:
                           weight = cave[column + col_offset][row + row_offset])
   return G
 
+def solve(repeats: int) -> int:
+  cave = read_file("day15/sample.txt")
+  G = build_graph(cave)
+  print(G)
 
-cave = read_file("day15/data.txt")
-G = build_graph(cave)
-print(G)
+  number_of_rows, number_of_columns = cave.shape
+  route = (nx.dijkstra_path(G,
+                        source=(0,0),
+                        target=(number_of_columns-1, number_of_rows-1),
+                        weight='weight'))
 
-number_of_rows, number_of_columns = cave.shape
-route = (nx.dijkstra_path(G,
-                       source=(0,0),
-                       target=(number_of_columns-1, number_of_rows-1),
-                       weight='weight'))
+  return sum([cave[col][row] for col,row in route if col !=0 or row != 0])                       
 
-answer = sum([cave[col][row] for col,row in route if col !=0 or row != 0])                       
-print(answer)
+
+part_one = solve(1)
+assert part_one in [40, 717]
+
+part_two = solve(5)
+print(part_two)
+assert part_two in [315, 717]
