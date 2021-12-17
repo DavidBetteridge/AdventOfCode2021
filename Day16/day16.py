@@ -45,12 +45,8 @@ def read_file(filename: str) -> str:
 def package_length(binary : BinaryPipe, part1: bool) -> int:
   # Decode packet
   version = binary.read(3)
-  print(f"version={version}")
-
   packet_type = binary.read(3)
   is_literal = packet_type == 4
-  print(f"packet_type={packet_type}")
-
   if is_literal:
     done = False
     literal_value = ""
@@ -58,7 +54,6 @@ def package_length(binary : BinaryPipe, part1: bool) -> int:
       done = binary.read(1) == 0
       group = binary.read_as_binary(4)
       literal_value += group
-    print("literal_value", int(literal_value,2))
     if part1:
       return version
     else:
@@ -69,7 +64,6 @@ def package_length(binary : BinaryPipe, part1: bool) -> int:
     subpacket_values = []
     if length_type == 0:
       packet_length = binary.read(15)
-      print("packet_length="+str(packet_length))
       end_of_subpackets = binary.current_offset() + packet_length
       while binary.current_offset() < end_of_subpackets:
         subpackage_value = package_length(binary, part1)   
@@ -77,8 +71,6 @@ def package_length(binary : BinaryPipe, part1: bool) -> int:
           subpacket_values.append(subpackage_value)
     else:
       number_of_subpackets = binary.read(11)
-      print("number_of_subpackets="+str(number_of_subpackets))
-
       for _ in range(number_of_subpackets):
         subpackage_value = package_length(binary, part1)   
         if subpackage_value is not None:
