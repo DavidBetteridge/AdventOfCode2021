@@ -7,7 +7,6 @@ def read_file(filename: str) -> str:
 
 
 def package_length(binary, start_from=0) -> int:
-  a=start_from
   if binary[start_from:].replace("0", "") == "":
     return None, len(binary) 
 
@@ -39,8 +38,9 @@ def package_length(binary, start_from=0) -> int:
     if length_type == 0:
       packet_length = int(binary[start_from:start_from+15],2)
       start_from+=15
+      a = start_from
       print("packet_length="+str(packet_length))
-      while start_from < len(binary):
+      while start_from < a+packet_length:
         subpackage_value, start_from = package_length(binary, start_from)   
         if subpackage_value is not None:
           subpacket_values.append(subpackage_value)
