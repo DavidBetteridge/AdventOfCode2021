@@ -46,14 +46,16 @@ sample_target = Target(20, 30, -10, -5)
 real_target = Target(265, 287, -103, -58)
 target = real_target
 
-startXVel = 0
+#startXVel = 0
 x_too_small = True
 x_too_big = False
-answer = 0
-while not x_too_big:
-  startYVel = 10
+answer = 1
+# while not x_too_big:
+for startXVel in range(200):
+  # startYVel = 10
   y_overshot = False
-  while not y_overshot:
+  #while not y_overshot:
+  for startYVel in range(200):
     probe = PositionAndVelocity(0, 0, startXVel, startYVel)
     fire = True
     highest = probe.pos_y
@@ -64,12 +66,14 @@ while not x_too_big:
         answer = max(answer, highest)
         print(f"Hit target {startXVel}, {startYVel} - Height was {highest}")
         break
-      if overshot(sample_target, probe):
+      if overshot(target, probe):
         y_overshot = True
-        print(f"Missed {startXVel}, {startYVel} x_too_small={x_too_small}  x_too_big={x_too_big}")
+     #   print(f"Missed {startXVel}, {startYVel} x_too_small={x_too_small}  x_too_big={x_too_big}")
         if not x_too_small and startYVel == 0: x_too_big = True
         break
       highest = max(highest, probe.pos_y)
     startYVel+=1
   startXVel+=1
 print(answer)
+
+#5253 to low
