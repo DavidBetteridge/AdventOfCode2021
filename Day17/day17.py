@@ -1,5 +1,6 @@
 import math
 import dataclasses
+from typing import Optional
 
 sample = "target area: x=20..30, y=-10..-5"
 data  = "target area: x=265..287, y=-103..-58"
@@ -45,45 +46,35 @@ def overshot(target: Target, current: PositionAndVelocity ):
 def inverse_triangular_number(x: int) -> int:
   return math.floor(math.sqrt(x * 2))
 
+def fire_probe(startXVel: int, startYVel: int) -> Optional[int]:
+  """
+    Either returns it's highest position, or None if it misses
+  """
+  probe = PositionAndVelocity(0, 0, startXVel, startYVel)
+  highest = probe.pos_y
+  while True:
+    probe = step(probe)
+    highest = max(highest, probe.pos_y)
+    if in_target(target, probe):
+      return highest
+    if overshot(target, probe):
+      return None
 
 sample_target = Target(20, 30, -10, -5)
 real_target = Target(265, 287, -103, -58)
 target = real_target
 
-#startXVel = 0
-x_too_small = True
-x_too_big = False
-answer = 1
+answer = 0
 hits = 0
 x_start = inverse_triangular_number(target.x1)
-# while not x_too_big:
-for startXVel in range(x_start, 400):
-  
-  # startYVel = -400
-  y_overshot = False
-  #while not y_overshot:
+for startXVel in range(x_start, target.x2+1):
   for startYVel in range(-400, 400):
-    probe = PositionAndVelocity(0, 0, startXVel, startYVel)
-    fire = True
-    highest = probe.pos_y
-    while fire:
-      probe = step(probe)
-      if in_target(target, probe):
-        x_too_small = False
-        answer = max(answer, highest)
-        #print(f"Hit target {startXVel}, {startYVel} - Height was {highest}")
-        hits+=1
-        break
-      if overshot(target, probe):
-        y_overshot = True
-     #   print(f"Missed {startXVel}, {startYVel} x_too_small={x_too_small}  x_too_big={x_too_big}")
-        if not x_too_small and startYVel == 0: x_too_big = True
-        break
-      highest = max(highest, probe.pos_y)
-    startYVel+=1
-  startXVel+=1
+    result = fire_probe(startXVel, startYVel)
+    if result is not None:
+      answer = max(answer, result)
+      hits+=1
+
 print(answer)
 print(hits)
-
-#5253 - Part 1
-#1770 - Part 2
+assert answer == 5253   #Part 1
+assert hits == 1770     #Part 2
