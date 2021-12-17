@@ -1,3 +1,4 @@
+import math
 import dataclasses
 
 sample = "target area: x=20..30, y=-10..-5"
@@ -41,6 +42,9 @@ def overshot(target: Target, current: PositionAndVelocity ):
   return current.pos_x > target.x2 or \
          current.pos_y < target.y1
 
+def inverse_triangular_number(x: int) -> int:
+  return math.floor(math.sqrt(x * 2))
+
 
 sample_target = Target(20, 30, -10, -5)
 real_target = Target(265, 287, -103, -58)
@@ -50,12 +54,15 @@ target = real_target
 x_too_small = True
 x_too_big = False
 answer = 1
+hits = 0
+x_start = inverse_triangular_number(target.x1)
 # while not x_too_big:
-for startXVel in range(200):
-  # startYVel = 10
+for startXVel in range(x_start, 400):
+  
+  # startYVel = -400
   y_overshot = False
   #while not y_overshot:
-  for startYVel in range(200):
+  for startYVel in range(-400, 400):
     probe = PositionAndVelocity(0, 0, startXVel, startYVel)
     fire = True
     highest = probe.pos_y
@@ -64,7 +71,8 @@ for startXVel in range(200):
       if in_target(target, probe):
         x_too_small = False
         answer = max(answer, highest)
-        print(f"Hit target {startXVel}, {startYVel} - Height was {highest}")
+        #print(f"Hit target {startXVel}, {startYVel} - Height was {highest}")
+        hits+=1
         break
       if overshot(target, probe):
         y_overshot = True
@@ -75,5 +83,7 @@ for startXVel in range(200):
     startYVel+=1
   startXVel+=1
 print(answer)
+print(hits)
 
-#5253 to low
+#5253 - Part 1
+#1770 - Part 2
