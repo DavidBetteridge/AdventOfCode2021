@@ -66,15 +66,19 @@ target = real_target
 
 answer = 0
 hits = 0
+misses = 0
 x_start = inverse_triangular_number(target.x1)
 for startXVel in range(x_start, target.x2+1):
-  for startYVel in range(-400, 400):
+  for startYVel in range(target.y1, 400):
     result = fire_probe(startXVel, startYVel)
     if result is not None:
       answer = max(answer, result)
       hits+=1
+    else:
+      misses+=1
 
 print(answer)
 print(hits)
+print(misses)   #131525
 assert answer == 5253   #Part 1
 assert hits == 1770     #Part 2
