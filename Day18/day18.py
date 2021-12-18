@@ -17,13 +17,13 @@ def tokenise(input: str) -> List:
   ind = 0
   while ind < len(input):
     if input[ind] == "[":
-      tokens.append("OPEN")
+      tokens.append(TokenType.OPEN)
       ind += 1
     elif input[ind] == "]":
-      tokens.append("CLOSE")
+      tokens.append(TokenType.CLOSE)
       ind += 1
     elif input[ind] == ",":
-      tokens.append("COMMA")
+      tokens.append(TokenType.COMMA)
       ind += 1
     else:
       value = ""  
@@ -37,11 +37,11 @@ def tokenise(input: str) -> List:
 def tokens_to_string(tokens: List) -> str:
   result = ""
   for token in tokens:
-    if token == "OPEN":
+    if token == TokenType.OPEN:
       result += "["
-    elif token == "CLOSE":
+    elif token == TokenType.CLOSE:
       result += "]"      
-    elif token == "COMMA":
+    elif token == TokenType.COMMA:
       result += ","
     else:
       result += token
@@ -71,20 +71,20 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
   ind = 0
   depth = 0
   while ind < len(tokens):
-    if tokens[ind] == "OPEN":
+    if tokens[ind] == TokenType.OPEN:
       depth+=1
       if depth > 4:
         # We are too deep so we need to explode the first left most pair.
         # However,  we can only explode a pair if it contains two regular numbers.
         # So  [1,2] is ok,  but [1, [2,3]] is not.
         # ie is there a [ before our closing ]
-        next_open = find_next_token_of_type(tokens, "OPEN", ind+1)
-        next_close = find_next_token_of_type(tokens, "CLOSE", ind+1)
+        next_open = find_next_token_of_type(tokens, TokenType.OPEN, ind+1)
+        next_close = find_next_token_of_type(tokens, TokenType.CLOSE, ind+1)
         if next_open is None or next_close < next_open:
           return ind
 
       ind+=1
-    elif tokens[ind] == "CLOSE":
+    elif tokens[ind] == TokenType.CLOSE:
       depth-=1
       ind+=1
     else:
@@ -111,7 +111,7 @@ def split_pair(tokens : List, ind_of_pair: int) -> List:
 
 
 def explode_pair(tokens : List, ind_of_start_of_pair: int) -> List:
-  # ..... number_to_left ..... ind_of_start_of_pair:[ lhs comma rhs ] ... number_to_right ....
+  # ..... number_to_left ..... ind_of_start_of_pair:[ lhsTokenType.commarhs ] ... number_to_right ....
   lhs = int(tokens[ind_of_start_of_pair + 1])
   rhs = int(tokens[ind_of_start_of_pair + 3])
   index_of_number_to_left = find_previous_token_of_type(tokens, "NUMBER", ind_of_start_of_pair - 1)
@@ -143,8 +143,7 @@ def reduce(tokens : List[str]) -> List[str]:
 
 
 def calculate_magnitude(tokens : List[str]) -> int:
-
-  # replace any [ x, y ] with a number
+  # Keep replacing any [ x, y ] with a number
   ind = 0
   while len(tokens) > 1:
     if tokens[ind] == TokenType.OPEN and \
@@ -216,4 +215,4 @@ for lhs in tokenised:
   for rhs in tokenised:
     total = calculate_magnitude(reduce(add_tokens(lhs, rhs)))
     best = max(best, total)
-print(best)    
+print(best)    # 3993 4650
