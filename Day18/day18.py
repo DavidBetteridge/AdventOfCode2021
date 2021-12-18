@@ -7,6 +7,11 @@ class TokenType:
   CLOSE = "CLOSE"
   COMMA = "COMMA"
 
+def read_file(filename: str) -> List[str]:
+  with open(filename) as f:
+    lines = f.readlines()
+    return [line.strip() for line in lines]
+
 def tokenise(input: str) -> List:
   tokens = []
   ind = 0
@@ -67,14 +72,7 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
   depth = 0
   while ind < len(tokens):
     if tokens[ind] == "OPEN":
-
-      # We only increase the depth if we contain exactly two children
-      # ie.  [1,2] or [1,[1,2]] etc is fine
-      # but [[1,2]] isn't as [1,2] is only child
-      
-
       depth+=1
-      
       if depth > 4:
         # We are too deep so we need to explode the first left most pair.
         # However,  we can only explode a pair if it contains two regular numbers.
@@ -113,7 +111,7 @@ def split_pair(tokens : List, ind_of_pair: int) -> List:
 
 
 def explode_pair(tokens : List, ind_of_start_of_pair: int) -> List:
-  # We ..... number_to_left ..... ind_of_start_of_pair:[ lhs comma rhs ] ... number_to_right ....
+  # ..... number_to_left ..... ind_of_start_of_pair:[ lhs comma rhs ] ... number_to_right ....
   lhs = int(tokens[ind_of_start_of_pair + 1])
   rhs = int(tokens[ind_of_start_of_pair + 3])
   index_of_number_to_left = find_previous_token_of_type(tokens, "NUMBER", ind_of_start_of_pair - 1)
@@ -136,14 +134,33 @@ def reduce(tokens : List[str]) -> List[str]:
   while True:
     if (pair_to_explode := find_pair_to_explode(tokens)) is not None:
       tokens = explode_pair(tokens, pair_to_explode)
-      print("After explode", tokens_to_string(tokens))
 
     elif (pair_to_split := find_pair_to_split(tokens)) is not None:
       tokens = split_pair(tokens, pair_to_split)
-      print("After split", tokens_to_string(tokens))
 
     else:
       return tokens
+
+
+def calculate_magnitude(tokens : List[str]) -> int:
+
+  # replace any [ x, y ] with a number
+  ind = 0
+  while len(tokens) > 1:
+    if tokens[ind] == TokenType.OPEN and \
+       tokens[ind+1].isdigit() and \
+       tokens[ind+2] == TokenType.COMMA and \
+       tokens[ind+3].isdigit() and \
+       tokens[ind+4] == TokenType.CLOSE:
+       magnitude = (3 * int(tokens[ind+1])) + (2 * int(tokens[ind+3])) 
+       tokens = tokens[:ind] + [str(magnitude)] + tokens[ind+5:]
+       ind = 0
+    else:
+      ind += 1
+  return int(tokens[0])
+
+assert calculate_magnitude(tokenise("[9,1]")) == 29
+assert calculate_magnitude(tokenise("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")) == 3488
 
 lhs = tokenise("[[[[4,3],4],4],[7,[[8,4],9]]]")
 rhs = tokenise("[1,1]")
@@ -180,3 +197,12 @@ input = tokenise("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
 explode = explode_pair(input, find_pair_to_explode(input))
 print(tokens_to_string(explode))
 assert tokens_to_string(explode) == "[[3,[2,[8,0]]],[9,[5,[7,0]]]]"
+
+numbers = read_file("Day18/data.txt")
+total = tokenise(numbers[0])
+for i in range(1, len(numbers)):
+  rhs = tokenise(numbers[i])
+  total = add_tokens(total, rhs)
+  total = reduce(total)
+print(tokens_to_string(total))
+print(calculate_magnitude(total))
