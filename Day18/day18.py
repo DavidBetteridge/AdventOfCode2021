@@ -1,7 +1,11 @@
 
+import math
 from typing import List, Optional
 
-input = "[[[[[9,8],1],2],3],4]"
+class TokenType:
+  OPEN = "OPEN"
+  CLOSE = "CLOSE"
+  COMMA = "COMMA"
 
 def tokenise(input: str) -> List:
   tokens = []
@@ -63,6 +67,12 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
   depth = 0
   while ind < len(tokens):
     if tokens[ind] == "OPEN":
+
+      # We only increase the depth if we contain exactly two children
+      # ie.  [1,2] or [1,[1,2]] etc is fine
+      # but [[1,2]] isn't as [1,2] is only child
+      
+
       depth+=1
       
       if depth >= 4:
@@ -84,6 +94,24 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
   return None
 
 
+def find_pair_to_split(tokens: List) -> Optional[int]:
+  # Returns the index of the number
+  ind = 0
+  while ind < len(tokens):
+    if tokens[ind].isdigit() and int(tokens[ind]) > 9:
+      return ind
+    else:
+      ind += 1
+  return None
+
+def split_pair(tokens : List, ind_of_pair: int) -> List:
+  number = int(tokens[ind_of_pair])
+  lhs = math.floor(number / 2.0)
+  rhs = math.ceil(number / 2.0)
+  new_tokens = [ TokenType.OPEN, str(lhs), TokenType.COMMA, str(rhs), TokenType.CLOSE] 
+  return tokens[:ind_of_pair] + new_tokens + tokens[ind_of_pair+1:]
+
+
 def explode_pair(tokens : List, ind_of_start_of_pair: int) -> List:
   # We ..... number_to_left ..... ind_of_start_of_pair:[ lhs comma rhs ] ... number_to_right ....
   lhs = int(tokens[ind_of_start_of_pair + 1])
@@ -101,6 +129,9 @@ def explode_pair(tokens : List, ind_of_start_of_pair: int) -> List:
 
   return tokens
 
+input = tokenise("[[[[0,7],4],[15,[0,13]]],[1,1]]")
+split = split_pair(input, find_pair_to_split(input))
+assert tokens_to_string(split) == "[[[[0,7],4],[[7,8],[0,13]]],[1,1]]"
 
 input = tokenise("[[[[[9,8],1],2],3],4]")
 explode = explode_pair(input, find_pair_to_explode(input))
@@ -120,4 +151,5 @@ assert tokens_to_string(explode) == "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]"
 
 input = tokenise("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
 explode = explode_pair(input, find_pair_to_explode(input))
+print(tokens_to_string(explode))
 assert tokens_to_string(explode) == "[[3,[2,[8,0]]],[9,[5,[7,0]]]]"
