@@ -125,9 +125,20 @@ def explode_pair(tokens : List, ind_of_start_of_pair: int) -> List:
     tokens[index_of_number_to_right] = str(int(tokens[index_of_number_to_right]) + rhs)
 
   # Now we have to replace this pair with a 0
-  tokens = tokens[:ind_of_start_of_pair] + ["0"] + tokens[ind_of_start_of_pair+5:]
+  return tokens[:ind_of_start_of_pair] + ["0"] + tokens[ind_of_start_of_pair+5:]
 
-  return tokens
+  
+def add_tokens(lhs_tokens: List[str], rhs_tokens: List[str]) -> List[str]:
+  return [ TokenType.OPEN ] + lhs_tokens + [TokenType.COMMA] + rhs_tokens + [ TokenType.CLOSE ]
+
+
+
+
+lhs = tokenise("[1,2]")
+rhs = tokenise("[[3,4],5]")
+added = add_tokens(lhs, rhs)
+assert tokens_to_string(added) == "[[1,2],[[3,4],5]]"
+
 
 input = tokenise("[[[[0,7],4],[15,[0,13]]],[1,1]]")
 split = split_pair(input, find_pair_to_split(input))
