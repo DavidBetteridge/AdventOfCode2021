@@ -199,10 +199,21 @@ print(tokens_to_string(explode))
 assert tokens_to_string(explode) == "[[3,[2,[8,0]]],[9,[5,[7,0]]]]"
 
 numbers = read_file("Day18/data.txt")
-total = tokenise(numbers[0])
+tokenised = [tokenise(number) for number in numbers]
+
+total = tokenised[0]
 for i in range(1, len(numbers)):
-  rhs = tokenise(numbers[i])
+  rhs = tokenised[i]
   total = add_tokens(total, rhs)
   total = reduce(total)
 print(tokens_to_string(total))
-print(calculate_magnitude(total))
+print(calculate_magnitude(total))   #4140   3675
+
+
+# Part 2
+best = 0
+for lhs in tokenised:
+  for rhs in tokenised:
+    total = calculate_magnitude(reduce(add_tokens(lhs, rhs)))
+    best = max(best, total)
+print(best)    
