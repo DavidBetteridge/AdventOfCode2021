@@ -75,7 +75,7 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
 
       depth+=1
       
-      if depth >= 4:
+      if depth > 4:
         # We are too deep so we need to explode the first left most pair.
         # However,  we can only explode a pair if it contains two regular numbers.
         # So  [1,2] is ok,  but [1, [2,3]] is not.
@@ -132,13 +132,29 @@ def add_tokens(lhs_tokens: List[str], rhs_tokens: List[str]) -> List[str]:
   return [ TokenType.OPEN ] + lhs_tokens + [TokenType.COMMA] + rhs_tokens + [ TokenType.CLOSE ]
 
 
+def reduce(tokens : List[str]) -> List[str]:
+  while True:
+    if (pair_to_explode := find_pair_to_explode(tokens)) is not None:
+      tokens = explode_pair(tokens, pair_to_explode)
+      print("After explode", tokens_to_string(tokens))
 
+    elif (pair_to_split := find_pair_to_split(tokens)) is not None:
+      tokens = split_pair(tokens, pair_to_split)
+      print("After split", tokens_to_string(tokens))
+
+    else:
+      return tokens
+
+lhs = tokenise("[[[[4,3],4],4],[7,[[8,4],9]]]")
+rhs = tokenise("[1,1]")
+added = add_tokens(lhs, rhs)
+output = reduce(added)
+assert tokens_to_string(output) == "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"
 
 lhs = tokenise("[1,2]")
 rhs = tokenise("[[3,4],5]")
 added = add_tokens(lhs, rhs)
 assert tokens_to_string(added) == "[[1,2],[[3,4],5]]"
-
 
 input = tokenise("[[[[0,7],4],[15,[0,13]]],[1,1]]")
 split = split_pair(input, find_pair_to_split(input))
