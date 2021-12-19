@@ -152,20 +152,14 @@ rotations.append(np.array([
 class Scanner:
   def __init__(self, number: int):
     self.number = number
-    self.orientations = [
-      pd.DataFrame(data=[], columns=["x", "y", "z"])
-      for _ in range(24)
+    self.orientations = [ np.empty([0, 3]) for _ in range(24)
     ]
 
   def add_beacon(self, beacon: str):
     identity = np.array(beacon.split(","), np.int32)
     for i in range(24):
       new_row = np.dot(rotations[i], identity)
-      self.orientations[i].loc[len(self.orientations[i])] = new_row
-
-  # def load_complete(self):
-  #   for i in range(len(self.orientations)):
-  #     self.orientations[i] = self.orientations[i].sort_values(by=['x','y','z'])
+      self.orientations[i] = np.vstack([self.orientations[i], new_row])
 
 def parse_file() -> List[Scanner]:
   with open("day19/sample.txt") as f:
@@ -182,26 +176,30 @@ def parse_file() -> List[Scanner]:
       elif line.strip() != "":
         scanner.add_beacon(line.strip())
     scanners.append(scanner)
-
-    # for scanner in scanners:
-    #   scanner.load_complete()
     return scanners
+#######################################################
+
+def count_matches(lhs: np.array, rhs: np.array) -> int:
+  return sum([len(np.where((rhs[:,0] == lhs[i][0]) & (rhs[:,1]==lhs[i][1]) & (rhs[:,2]==lhs[i][2]))[0])
+         for i in range(len(lhs))])
+
 #######################################################
 
 scanners = parse_file()
 
-fixed = scanners[0]
+fixed = scanners[0].orientations[0]
 compare = scanners[1]
 
 best_number_of_overlaps = 0
-n = compare.orientations[0].shape[0]
-for fixed_index in range(fixed.orientations[0].shape[0]):
-  fixed_b = fixed.orientations[0].loc[fixed_index]
+n = len(compare.orientations[0])
+m = len(fixed)
+for fixed_index in range(m):
+  fixed_b = fixed[fixed_index]
   for orientation in compare.orientations:
     for possible_first_overlap_index in range(n):
-      possible_first_overlap = orientation.loc[possible_first_overlap_index]
+      possible_first_overlap = orientation[possible_first_overlap_index]
       diff = fixed_b - possible_first_overlap
       adjusted = orientation + diff
-      # number_of_overlaps = pd.merge(fixed.orientations[0], adjusted, how ='inner', on =['x', 'y', 'z']).shape[0]
-      # best_number_of_overlaps = max(best_number_of_overlaps, number_of_overlaps)
+      number_of_overlaps = count_matches(fixed, adjusted)
+      best_number_of_overlaps = max(best_number_of_overlaps, number_of_overlaps)
 print(best_number_of_overlaps)
