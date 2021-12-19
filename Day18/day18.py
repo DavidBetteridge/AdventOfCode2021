@@ -66,7 +66,7 @@ def find_next_token_of_type(tokens: List[str], token_type, start_from):
       ind += 1
   return None
 
-def find_pair_to_explode(tokens: List) -> Optional[int]:
+def find_pair_to_explode(tokens: List[str]) -> Optional[int]:
   # Returns the index of the opening bracket
   ind = 0
   depth = 0
@@ -77,10 +77,7 @@ def find_pair_to_explode(tokens: List) -> Optional[int]:
         # We are too deep so we need to explode the first left most pair.
         # However,  we can only explode a pair if it contains two regular numbers.
         # So  [1,2] is ok,  but [1, [2,3]] is not.
-        # ie is there a [ before our closing ]
-        next_open = find_next_token_of_type(tokens, TokenType.OPEN, ind+1)
-        next_close = find_next_token_of_type(tokens, TokenType.CLOSE, ind+1)
-        if next_open is None or next_close < next_open:
+        if tokens[ind+1].isdigit() and tokens[ind+3].isdigit():
           return ind
 
       ind+=1
