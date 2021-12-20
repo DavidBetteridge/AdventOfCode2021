@@ -1,6 +1,5 @@
 from typing import List
 import numpy as np
-import pandas as pd
 
 rotations = []
 
@@ -169,7 +168,7 @@ class Scanner:
 
 
 def parse_file() -> List[Scanner]:
-  with open("day19/sample.txt") as f:
+  with open("day19/data.txt") as f:
     lines = f.readlines()
     scanner_number = -1
     scanner = None
@@ -186,45 +185,38 @@ def parse_file() -> List[Scanner]:
     return scanners
 #######################################################
 
-def count_matches(lhs: np.array, rhs: np.array) -> int:
-  return sum([1 if np.equal(lhs[i], rhs).all(axis=1).any() else 0
-         for i in range(len(lhs))])
-
-
 def try_merge(fixed_scanner: Scanner, scanner_to_test: Scanner) -> bool:
-  best_number_of_overlaps = 0
-  best_beacons = None
-
   fixed = fixed_scanner.orientations[0]
   n = len(scanner_to_test.orientations[0])
   for fixed_index in range(len(fixed)):
     fixed_b = fixed[fixed_index]
-    for orientation_no, orientation in enumerate(scanner_to_test.orientations):
+    for orientation in scanner_to_test.orientations:
       for possible_first_overlap_index in range(n):
         possible_first_overlap = orientation[possible_first_overlap_index]
         adjusted = orientation + fixed_b - possible_first_overlap
-        number_of_overlaps = count_matches(fixed, adjusted)
-        if number_of_overlaps > best_number_of_overlaps:
-          best_number_of_overlaps = number_of_overlaps
-          # best_orientation = orientation_no
-          # best_offset = fixed_b - possible_first_overlap
-          best_beacons = adjusted
 
-  if best_number_of_overlaps >= 12:
-    # Any beacons in best_beacons which aren't in fixed need to
-    # be added to fixed_scanner
-    for beacon in best_beacons:
-      if not np.equal(beacon, fixed).all(axis=1).any():
-        fixed_scanner.add_beacon(beacon)
-    return True
-  else:
-    return False
+        if sum([1 if np.equal(fixed[i], adjusted).all(axis=1).any() else 0
+            for i in range(len(fixed))]) >= 12:
+          # Any beacons in best_beacons which aren't in fixed need to
+          # be added to fixed_scanner
+          for beacon in adjusted:
+            if not np.equal(beacon, fixed).all(axis=1).any():
+              fixed_scanner.add_beacon(beacon)
+          return True
+  return False
 
 def next_merge(scanners: List[Scanner]) -> List[Scanner]:
-  for a in range(len(scanners)-1):
-    for b in range(a+1, len(scanners)):
+  a = 0
+  while a < len(scanners) - 1:
+    b = a + 1
+    while b < len(scanners) :
       if (try_merge(scanners[a], scanners[b])):
-        return scanners[:b] + scanners[b+1:]  
+        # Remove B from the list of scanners,  but don't advance the index
+        scanners = scanners[:b] + scanners[b+1:]
+        print(len(scanners))
+      else:
+        b += 1
+    a += 1
   return scanners        
 
 
@@ -232,14 +224,8 @@ def next_merge(scanners: List[Scanner]) -> List[Scanner]:
 
 scanners = parse_file()
 while len(scanners) > 1:
-  print(len(scanners))
   scanners = next_merge(scanners)
 
 print("Scanners")
 answer = len(scanners[0].orientations[0])
 print(answer)
-
-# print(can_overlap(scanners[0], scanners[1]))
-# print(can_overlap(scanners[1], scanners[4]))
-
-
