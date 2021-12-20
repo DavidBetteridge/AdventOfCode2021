@@ -1,5 +1,6 @@
-from typing import List
 import numpy as np
+from typing import List
+from numba import jit
 
 rotations = []
 
@@ -151,6 +152,7 @@ rotations.append(np.array([
 class Scanner:
   def __init__(self, number: int):
     self.number = number
+    self.locations = [ np.array([0,0,0]) ]
     self.orientations = [ np.empty([0, 3]) for _ in range(24)
     ]
 
@@ -195,22 +197,35 @@ def try_merge(fixed_scanner: Scanner, scanner_to_test: Scanner) -> bool:
         possible_first_overlap = orientation[possible_first_overlap_index]
         adjusted = orientation + fixed_b - possible_first_overlap
 
-        if sum([1 if np.equal(fixed[i], adjusted).all(axis=1).any() else 0
-            for i in range(len(fixed))]) >= 12:
+        if overlaps(fixed, adjusted):
           # Any beacons in best_beacons which aren't in fixed need to
           # be added to fixed_scanner
+          diff = fixed_b - possible_first_overlap
+          for a in scanner_to_test.locations:
+            fixed_scanner.locations.append(a + diff)
           for beacon in adjusted:
             if not np.equal(beacon, fixed).all(axis=1).any():
               fixed_scanner.add_beacon(beacon)
           return True
   return False
 
+@jit
+def overlaps(lhs: np.array, rhs: np.array) -> int:
+  lookup = [(x[0],x[1],x[2]) for x in rhs]
+  count=0
+  for x in lhs:
+    key = (x[0],x[1],x[2])
+    if key in lookup:
+      count+=1
+      if count == 12: return True
+  return False
+
 def next_merge(scanners: List[Scanner]) -> List[Scanner]:
-  a = 0
+  a: int = 0
   while a < len(scanners) - 1:
     b = a + 1
     while b < len(scanners) :
-      if (try_merge(scanners[a], scanners[b])):
+      if try_merge(scanners[a], scanners[b]):
         # Remove B from the list of scanners,  but don't advance the index
         scanners = scanners[:b] + scanners[b+1:]
         print(len(scanners))
@@ -221,7 +236,6 @@ def next_merge(scanners: List[Scanner]) -> List[Scanner]:
 
 
 #######################################################
-
 scanners = parse_file()
 while len(scanners) > 1:
   scanners = next_merge(scanners)
@@ -229,3 +243,14 @@ while len(scanners) > 1:
 print("Scanners")
 answer = len(scanners[0].orientations[0])
 print(answer)
+
+print(scanners[0].locations)
+print("")
+
+answer = 0
+for a in scanners[0].locations:
+  for b in scanners[0].locations:
+    dist = a - b
+    md = abs(dist[0])+abs(dist[1])+abs(dist[2])
+    answer = max(answer, md)
+print(answer)  #3621, 10959 too low,   12232 too high
