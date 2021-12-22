@@ -27,8 +27,5 @@ while player1_score < 1000 and player2_score < 1000:
     player2 = mod_add(player2, turn, 10)
     player2_score += player2
 
-    if player2_score == 745:
-      print("a")
-
 loser = player2_score if player2_score < player1_score else player1_score
 print(loser * rolls)
