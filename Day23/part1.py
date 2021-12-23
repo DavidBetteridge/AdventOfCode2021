@@ -105,7 +105,7 @@
 
 # cells = sample_cells
 
-
+import copy
 from typing import List
 
 
@@ -187,8 +187,8 @@ for amphipod_name, amphipod in amphipods.items():
   amphipod_location = amphipod["Location"]
   locations[amphipod_location] = amphipod_name
 
-  
-def get_valid_moves(amphipod_name, amphipod) -> List[str]:
+
+def get_valid_moves(locations, amphipods, amphipod_name, amphipod) -> List[str]:
   amphipod_type = amphipod["Type"]
   amphipod_location = amphipod["Location"]
   in_room = amphipod_location.startswith("R")
@@ -196,15 +196,15 @@ def get_valid_moves(amphipod_name, amphipod) -> List[str]:
     room_type = amphipod_location[1]
     room_position = int(amphipod_location[2])
     if amphipod_type == room_type and room_position == 0:
-      print(f"Home")
+      #print(f"Home")
       return []
 
     if amphipod_type == room_type and room_position == 1 and locations[f"R{amphipod_type}0"] == amphipod_type:
-      print(f"Both home")
+      #print(f"Both home")
       return []
     
     if in_room and room_position == 0 and locations[f"R{amphipod_type}1"] != "":
-      print(f"Blocked in")
+      #print(f"Blocked in")
       return []
     
     # We are in the room,  but we can move out into the corridor
@@ -221,7 +221,7 @@ def get_valid_moves(amphipod_name, amphipod) -> List[str]:
     while i >= 0 and locations[f"C{i}"] == "":
       cost+=1
       if i not in (2,4,6,8):
-        possible_moves.append((i, cost))
+        possible_moves.append((f"C{i}", cost))
       i -= 1
 
     # Moving right
@@ -230,8 +230,9 @@ def get_valid_moves(amphipod_name, amphipod) -> List[str]:
     while i <= 10 and locations[f"C{i}"] == "":
       cost+=1
       if i not in (2,4,6,8):
-        possible_moves.append((i, cost))
+        possible_moves.append((f"C{i}", cost))
       i += 1
+    return possible_moves
   
   else:
     # We are in a corridor.  We can only enter our own rooms if none else
@@ -270,14 +271,37 @@ def get_valid_moves(amphipod_name, amphipod) -> List[str]:
         else:
           cost += 1
           return [(f"R{amphipod_type}1", cost)]          
+      
+  return []
 
-  return possible_moves
+def game_is_won(amphipods) -> bool:
+  for amphipod_name, amphipod in amphipods.items():
+    if amphipod["Location"][0] != "R" or amphipod["Location"][1] != amphipod["Type"]:
+      return False
+  return True
 
+def update_state(locations, amphipods, amphipod_name, location_to_move_to):
+  #print(f"Move {amphipod_name} to {location_to_move_to}")
+  locations2 = copy.deepcopy(locations)
+  amphipods2 = copy.deepcopy(amphipods)
+  current_location = amphipods[amphipod_name]["Location"]
+  locations2[current_location] = ""
+  locations2[location_to_move_to] = amphipod_name
+  amphipods2[amphipod_name]["Location"] = location_to_move_to
+  return locations2, amphipods2
 
+def play(locations, amphipods):
+  if game_is_won(amphipods):
+    # No more moves are required.
+    return 0
 
+  best_cost = 999999
+  for amphipod_name, amphipod in amphipods.items():
+    possible_moves = get_valid_moves(locations, amphipods, amphipod_name, amphipod)
+    for possible_move in possible_moves:
+      locations2, amphipods2 = update_state(locations, amphipods, amphipod_name, possible_move[0])
+      cost = possible_move[1] + play(locations2, amphipods2)
+      best_cost = min(cost, best_cost)
+  return best_cost
 
-
-for amphipod_name, amphipod in amphipods.items():
-  print(amphipod_name)
-  possible_moves = get_valid_moves(amphipod_name, amphipod)
-  print(possible_moves)
+print(play(locations, amphipods))
