@@ -105,7 +105,7 @@
 
 # cells = sample_cells
 
-import copy
+from numba import jit
 from typing import List
 
 
@@ -118,8 +118,7 @@ roomD = ["D", "A"]
 #   Label corridor  C0....C10
 #   Label rooms RA0, RA1 .... RD0, RD1
 
-
-amphipods = {
+sample_amphipods = {
     "A0": {
         "Type": "A",
         "Location": "RA0"
@@ -154,6 +153,101 @@ amphipods = {
     }
 }
 
+real_amphipods = {
+    "A0": {
+        "Type": "A",
+        "Location": "RB1"
+    },
+    "A1": {
+        "Type": "A",
+        "Location": "RC0"
+    },
+    "B0": {
+        "Type": "B",
+        "Location": "RC1"
+    },
+    "B1": {
+        "Type": "B",
+        "Location": "RD0"
+    },
+    "C0": {
+        "Type": "C",
+        "Location": "RA1"
+    },
+    "C1": {
+        "Type": "C",
+        "Location": "RB0"
+    },
+    "D0": {
+        "Type": "D",
+        "Location": "RA0"
+    },
+    "D1": {
+        "Type": "D",
+        "Location": "RD1"
+    }
+}
+
+amphipods = real_amphipods
+
+# amphipods = {
+#     "A0": {
+#         "Type": "A",
+#         "Location": "RA0"
+#     },
+#     "A1": {
+#         "Type": "A",
+#         "Location": "RB1"
+#     },
+#     "B0": {
+#         "Type": "B",
+#         "Location": "RB0"
+#     },
+#     "B1": {
+#         "Type": "B",
+#         "Location": "RA1"
+#     },
+#     "C0": {
+#         "Type": "C",
+#         "Location": "RC0"
+#     },
+#     "C1": {
+#         "Type": "C",
+#         "Location": "RC1"
+#     },
+#     "D0": {
+#         "Type": "D",
+#         "Location": "RD0"
+#     },
+#     "D1": {
+#         "Type": "D",
+#         "Location": "RD1"
+#     }
+# }
+
+
+locations_lookup = [
+  ["C0"],
+  ["C1"],
+  ["C2"],
+  ["C3"],
+  ["C4"],
+  ["C5"],
+  ["C6"],
+  ["C7"],
+  ["C8"],
+  ["C9"],
+  ["C10"],
+  ["RA0"],
+  ["RA1"],
+  ["RB0"],
+  ["RB1"],
+  ["RC0"],
+  ["RC1"],
+  ["RD0"],
+  ["RD1"]
+]
+
 locations = {
   "C0" : "",
   "C1" : "",
@@ -183,14 +277,25 @@ room_entries = {
   "D" : 8,
 }
 
+costs = [1,1,10,10,100,100,1000,1000]
+
+amphipod_locations = []
+amphipod_types = []
+amphipod_names = []
+
 for amphipod_name, amphipod in amphipods.items():
   amphipod_location = amphipod["Location"]
   locations[amphipod_location] = amphipod_name
+  amphipod_locations.append(amphipod_location)
+  amphipod_types.append(amphipod["Type"])
+  amphipod_names.append(amphipod_name)
 
+import functools
 
-def get_valid_moves(locations, amphipods, amphipod_name, amphipod) -> List[str]:
-  amphipod_type = amphipod["Type"]
-  amphipod_location = amphipod["Location"]
+# @functools.lru_cache(maxsize=None)
+def get_valid_moves(locations, amphipod_locations, amphipod_number) -> List[str]:
+  amphipod_type = amphipod_types[amphipod_number]
+  amphipod_location = amphipod_locations[amphipod_number]
   in_room = amphipod_location.startswith("R")
   if in_room:
     room_type = amphipod_location[1]
@@ -199,7 +304,7 @@ def get_valid_moves(locations, amphipods, amphipod_name, amphipod) -> List[str]:
       #print(f"Home")
       return []
 
-    if amphipod_type == room_type and room_position == 1 and locations[f"R{amphipod_type}0"] == amphipod_type:
+    if amphipod_type == room_type and room_position == 1 and locations[f"R{amphipod_type}0"].startswith(amphipod_type):
       #print(f"Both home")
       return []
     
@@ -237,8 +342,8 @@ def get_valid_moves(locations, amphipods, amphipod_name, amphipod) -> List[str]:
   else:
     # We are in a corridor.  We can only enter our own rooms if none else
     # is in it.
-    can_enter_room = locations[f"R{amphipod_type}0"] in ["",amphipod_type] and \
-                     locations[f"R{amphipod_type}1"] in ["",amphipod_type]
+    can_enter_room = (locations[f"R{amphipod_type}0"] == "" or locations[f"R{amphipod_type}0"][0] == amphipod_type) and \
+                     (locations[f"R{amphipod_type}1"] == "" or locations[f"R{amphipod_type}1"][0] == amphipod_type)
     if can_enter_room:
       # And there is a path from here?
       current_position = int(amphipod_location[1:])
@@ -274,34 +379,37 @@ def get_valid_moves(locations, amphipods, amphipod_name, amphipod) -> List[str]:
       
   return []
 
-def game_is_won(amphipods) -> bool:
-  for amphipod_name, amphipod in amphipods.items():
-    if amphipod["Location"][0] != "R" or amphipod["Location"][1] != amphipod["Type"]:
+def game_is_won(amphipod_locations) -> bool:
+  for i in range(len(amphipod_locations)):
+    location = amphipod_locations[i]
+    if location[0] != "R" or location[1] != amphipod_types[i]:
       return False
   return True
 
-def update_state(locations, amphipods, amphipod_name, location_to_move_to):
-  #print(f"Move {amphipod_name} to {location_to_move_to}")
-  locations2 = copy.deepcopy(locations)
-  amphipods2 = copy.deepcopy(amphipods)
-  current_location = amphipods[amphipod_name]["Location"]
-  locations2[current_location] = ""
-  locations2[location_to_move_to] = amphipod_name
-  amphipods2[amphipod_name]["Location"] = location_to_move_to
-  return locations2, amphipods2
-
-def play(locations, amphipods):
-  if game_is_won(amphipods):
+def play(locations, amphipod_locations):
+  if game_is_won(amphipod_locations):
     # No more moves are required.
     return 0
 
   best_cost = 999999
-  for amphipod_name, amphipod in amphipods.items():
-    possible_moves = get_valid_moves(locations, amphipods, amphipod_name, amphipod)
+  for amphipod_number in range(len(amphipod_locations)):
+    possible_moves = get_valid_moves(locations, amphipod_locations, amphipod_number)
     for possible_move in possible_moves:
-      locations2, amphipods2 = update_state(locations, amphipods, amphipod_name, possible_move[0])
-      cost = possible_move[1] + play(locations2, amphipods2)
+
+      # make the move
+      current_location = amphipod_locations[amphipod_number]
+      locations[current_location] = ""
+      locations[possible_move[0]] = amphipod_names[amphipod_number]
+      amphipod_locations[amphipod_number] = possible_move[0]
+
+      cost = (possible_move[1] * costs[amphipod_number]) + play(locations, amphipod_locations)
+
+      # undo the move
+      locations[current_location] = amphipod_names[amphipod_number]
+      locations[possible_move[0]] = ""
+      amphipod_locations[amphipod_number] = current_location
+
       best_cost = min(cost, best_cost)
   return best_cost
 
-print(play(locations, amphipods))
+print(play(locations, amphipod_locations))
