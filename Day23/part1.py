@@ -328,6 +328,7 @@ def find_moves_for(locations, current_state, amphipod_number: int) -> List[Tuple
   possible_moves = []
 
   if in_room:
+    # We are in a room,  so we can move into the corridor or another room.
     room_type = current_location[0]
     room_position = int(current_location[1])
     if amphipod_type == room_type and room_position == 0:
@@ -348,72 +349,77 @@ def find_moves_for(locations, current_state, amphipod_number: int) -> List[Tuple
     enter_at = room_entries[room_type]
 
     #Cost to exit the room
-    cost = 0 if room_position == 1 else 1
+    cost = 1 if room_position == 1 else 2
 
     # Moving left
     i = enter_at
     while i >= 0 and locations[f"P{i}"] == "":
-      cost+=1
       if i not in (2,4,6,8):
         temp = copy.deepcopy(current_state)
         temp[amphipod_number] = f"P{i}"
         possible_moves.append((temp, amphipod_cost*cost))
+      cost+=1
       i -= 1
 
     # Moving right
-    cost = 0 if room_position == 1 else 1
+    cost = 1 if room_position == 1 else 2
     i = enter_at
     while i <= 10 and locations[f"P{i}"] == "":
-      cost+=1
       if i not in (2,4,6,8):
         temp = copy.deepcopy(current_state)
         temp[amphipod_number] = f"P{i}"        
         possible_moves.append((temp, amphipod_cost*cost))
+      cost+=1
       i += 1
-    return possible_moves
-  else:
-    # We are in a corridor.  We can only enter our own rooms if none else
-    # is in it.
-    can_enter_room = (locations[f"{amphipod_type}0"] == "" or locations[f"{amphipod_type}0"][0] == amphipod_type) and \
-                     (locations[f"{amphipod_type}1"] == "")
-    if can_enter_room:
-      # And there is a path from here?
-      current_position = int(current_location[1:])
-      enter_at = room_entries[amphipod_type]
-      cost = 0
-      blocked = False
-      if current_position < enter_at:
-        # Move right
-        i = current_position + 1
-        cost += 1
-        while i < enter_at and not blocked:
-          if locations[f"P{i}"] != "":
-            blocked=True
-          i += 1
-          cost += 1
-      else:
-        # Move left
-        i = current_position - 1
-        cost += 1
-        while i > enter_at and not blocked:
-          if locations[f"P{i}"] != "":
-            blocked=True
-          i -= 1
-          cost += 1
 
-      if not blocked:
-        if locations[f"{amphipod_type}0"] == "":
-          cost += 2
-          temp = copy.deepcopy(current_state)
-          temp[amphipod_number] = f"{amphipod_type}0"             
-        
-          return [(temp, amphipod_cost*cost)]
-        else:
-          cost += 1
-          temp = copy.deepcopy(current_state)
-          temp[amphipod_number] = f"{amphipod_type}"           
-          temp[pair_number] = f"{amphipod_type}"              
-          return [(temp, amphipod_cost*cost)]          
+  if in_room:
+    current_position = enter_at  # Where do we enter the corridor
+    basecost = 1 if room_position == 1 else 2 # Cost of leaving the room
+  else:
+    current_position = int(current_location[1:])
+    basecost = 0
+
+  # We are in a corridor.  We can only enter our own rooms if none else
+  # is in it.
+  can_enter_room = (locations[f"{amphipod_type}0"] == "" or locations[f"{amphipod_type}0"][0] == amphipod_type) and \
+                    (locations[f"{amphipod_type}1"] == "")
+  if can_enter_room:
+    # And there is a path from here?
+    enter_at = room_entries[amphipod_type]
+    cost = basecost
+    blocked = False
+    if current_position < enter_at:
+      # Move right
+      i = current_position + 1
+      cost += 1
+      while i < enter_at and not blocked:
+        if locations[f"P{i}"] != "":
+          blocked=True
+        i += 1
+        cost += 1
+    else:
+      # Move left
+      i = current_position - 1
+      cost += 1
+      while i > enter_at and not blocked:
+        if locations[f"P{i}"] != "":
+          blocked=True
+        i -= 1
+        cost += 1
+
+    if not blocked:
+      if locations[f"{amphipod_type}0"] == "":
+        cost += 2
+        temp = copy.deepcopy(current_state)
+        temp[amphipod_number] = f"{amphipod_type}0"             
+      
+        return [(temp, amphipod_cost*cost)]
+      else:
+        cost += 1
+        temp = copy.deepcopy(current_state)
+        temp[amphipod_number] = f"{amphipod_type}"           
+        temp[pair_number] = f"{amphipod_type}"              
+        return [(temp, amphipod_cost*cost)]          
       
   return possible_moves
 
@@ -456,7 +462,8 @@ def find_moves(current_state) -> List[Tuple[Tuple, int]]:
 G = nx.Graph()
 
 starting_position = ["A0","D0", "A1", "C1", "B1", "C0", "B0", "D1"]
-starting_position = ["A0","B1", "B0", "A1", "C", "C", "D", "D"]
+starting_position = ["B1","C0", "C1", "D0", "A1", "B0", "A0", "D1"]
+# starting_position = ["A0","B1", "B0", "A1", "C", "C", "D", "D"]
 target_position = ["A","A", "B", "B", "C", "C", "D", "D"]
 G.add_node("-".join(starting_position))
 todo = ["-".join(starting_position)]
@@ -470,7 +477,7 @@ while len(todo) > 0:
     possible_moves = find_moves(next_position.split("-"))
     for possible_move in possible_moves:
       following_state = "-".join(possible_move[0])
-      print(f"{next_position}=>{following_state}")
+      # print(f"{next_position}=>{following_state}")
       G.add_edge(next_position, following_state, weight = possible_move[1])
       if not following_state in processed:
         todo.append(following_state)
@@ -481,6 +488,6 @@ total, route = (nx.single_source_dijkstra(G,
           target="-".join(target_position),
           weight='weight'))
 
-print(total)
+print(total)  #15360 to high
 
 
