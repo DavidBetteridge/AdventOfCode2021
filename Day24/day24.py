@@ -45,8 +45,8 @@ def parse_line(line: str) -> Instruction:
     return Instruction(parts[0], parts[1], parts[2])
 
 
-def parse_file() -> List[Instruction]:
-  with open("day24/sample3.txt") as f:
+def parse_file(filename: str) -> List[Instruction]:
+  with open(filename) as f:
     lines = f.readlines()
     return [parse_line(l.strip()) for l in lines]
 
@@ -73,15 +73,15 @@ def execute_instruction(instruction: Instruction, state: State) -> State:
     else:
       return state.setValue(instruction.operand1, 0)
   else:
-    print("Not supported {instruction.operation}")
+    print(f"Not supported {instruction.operation}")
 
 
 
 
-instructions = parse_file()
+instructions = parse_file("day24/data.txt")
 state = State()
 for instruction in instructions:
   state = execute_instruction(instruction, state)
-
-
 print(state)
+
+# Input 1,    w=input1   x=1,  y=input1+14   z=input1+14
