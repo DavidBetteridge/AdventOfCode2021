@@ -192,7 +192,7 @@ def try_merge(fixed_scanner: Scanner, scanner_to_test: Scanner) -> bool:
   n = len(scanner_to_test.orientations[0])
   for fixed_index in range(len(fixed)):
     fixed_b = fixed[fixed_index]
-    for orientation in scanner_to_test.orientations:
+    for orientation_index, orientation in enumerate(scanner_to_test.orientations):
       for possible_first_overlap_index in range(n):
         possible_first_overlap = orientation[possible_first_overlap_index]
         adjusted = orientation + fixed_b - possible_first_overlap
@@ -200,9 +200,11 @@ def try_merge(fixed_scanner: Scanner, scanner_to_test: Scanner) -> bool:
         if overlaps(fixed, adjusted):
           # Any beacons in best_beacons which aren't in fixed need to
           # be added to fixed_scanner
-          diff = fixed_b - possible_first_overlap
+          diff = possible_first_overlap - fixed_b
           for a in scanner_to_test.locations:
-            fixed_scanner.locations.append(a + diff)
+            new_a = np.dot(rotations[orientation_index], a)
+            fixed_scanner.locations.append(new_a + diff)
+
           for beacon in adjusted:
             if not np.equal(beacon, fixed).all(axis=1).any():
               fixed_scanner.add_beacon(beacon)
@@ -250,7 +252,6 @@ print("")
 answer = 0
 for a in scanners[0].locations:
   for b in scanners[0].locations:
-    dist = a - b
-    md = abs(dist[0])+abs(dist[1])+abs(dist[2])
+    md = abs(a[0]-b[0])+abs(a[1]-b[1])+abs(a[2]-b[2])
     answer = max(answer, md)
-print(answer)  #3621, 10959 too low,   12232 too high
+print(answer)  #3621, 12226
