@@ -1,51 +1,55 @@
 import numpy as np
 from typing import List
 
+class direction:
+  EMPTY = 0
+  DOWN = 1 
+  LEFT = 2
 
 def read_file(filename: str) -> List[str]:
   with open(filename) as f:
     return [line.strip() for line in f.readlines()]
 
-def step_left(grid: np.array) -> np.array:
-  new_grid = np.zeros((number_of_rows, number_of_columns))
+def step_left(grid: np.array) -> bool:
+  changed = False
   for row_number in range(number_of_rows):
-    for column_number in range(number_of_columns):
+    column_number = 0
+    first = grid[row_number][0]
+    while column_number < number_of_columns:
       next_column = (column_number + 1) % number_of_columns
-      previous_column = (column_number - 1) % number_of_columns
-      if grid[row_number][column_number] == direction.LEFT and grid[row_number][next_column] == direction.EMPTY:
-        new_grid[row_number][column_number] = direction.EMPTY
-      elif grid[row_number][column_number] == direction.EMPTY and grid[row_number][previous_column] == direction.LEFT:
-        new_grid[row_number][column_number] = direction.LEFT
+      next = first if next_column == 0 else grid[row_number][next_column] 
+      if grid[row_number][column_number] == direction.LEFT and next == direction.EMPTY:
+        grid[row_number][column_number] = direction.EMPTY
+        grid[row_number][next_column] = direction.LEFT
+        column_number+=2
+        changed = True
       else:
-        new_grid[row_number][column_number] = grid[row_number][column_number]  
-  return new_grid
+        column_number+=1
+  return grid,changed
 
-def step_down(grid: np.array) -> np.array:
-  new_grid = np.zeros((number_of_rows, number_of_columns))
-  for row_number in range(number_of_rows):
-    next_row = (row_number + 1) % number_of_rows
-    previous_row = (row_number - 1) % number_of_rows
-    for column_number in range(number_of_columns):
-      if grid[row_number][column_number] == direction.DOWN and grid[next_row][column_number] == direction.EMPTY:
-        new_grid[row_number][column_number] = direction.EMPTY
-      elif grid[row_number][column_number] == direction.EMPTY and grid[previous_row][column_number] == direction.DOWN:
-        new_grid[row_number][column_number] = direction.DOWN
+def step_down(grid: np.array, changed: bool) -> bool:
+  for column_number in range(number_of_columns):
+    row_number = 0
+    first = grid[0][column_number]
+    while row_number < number_of_rows:
+      next_row = (row_number + 1) % number_of_rows
+      next = first if next_row == 0 else grid[next_row][column_number] 
+      if grid[row_number][column_number] == direction.DOWN and next == direction.EMPTY:
+        grid[row_number][column_number] = direction.EMPTY
+        grid[next_row][column_number] = direction.DOWN
+        row_number+=2
+        changed = True
       else:
-        new_grid[row_number][column_number] = grid[row_number][column_number]  
-  return new_grid
+        row_number+=1
+  return changed
 
-def step(grid: np.array) -> np.array:
-  return step_down(step_left(grid))
+def step(grid: np.array) -> bool:
+  return step_down(*step_left(grid))
 
 lines = read_file("Day25/data.txt")
 number_of_rows = len(lines)
 number_of_columns = len(lines[0])
 grid = np.empty((number_of_rows, number_of_columns))
-
-class direction:
-  EMPTY = 0
-  DOWN = 1 
-  LEFT = 2
 
 for row_number in range(number_of_rows):
   line = lines[row_number]
@@ -60,10 +64,8 @@ for row_number in range(number_of_rows):
 i = 0
 while True:
   i += 1
-  grid2 = step(grid)
-  if (grid == grid2).all():
+  changed = step(grid)
+  if not changed:
     break
-  else:
-    grid=grid2
 
 print(i)
