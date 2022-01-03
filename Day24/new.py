@@ -324,7 +324,6 @@ sol = solve_stage(zs, stage1)
 zs = set([z for z,_,_ in sol])
 solutions[1]=sol
 
-#print(solutions)
 
 answer=""
 sol = solutions[1]
@@ -338,8 +337,21 @@ for s in range(2,15):
   best_w = max(w for z,w,t in sol if z==next_z)
   next_z = [t for z,w,t in sol if w==best_w and z==next_z][0]
   answer+=str(best_w)
-
-
 print(answer)
 
-#74999295119389 to high
+
+
+
+answer=""
+sol = solutions[1]
+best_w = min(w for _,w,t in sol)
+assert len([t for _,w,t in sol if w==best_w]) == 1
+next_z = [t for _,w,t in sol if w==best_w][0]
+answer+=str(best_w)
+
+for s in range(2,15):
+  sol = solutions[s]
+  best_w = min(w for z,w,t in sol if z==next_z)
+  next_z = [t for z,w,t in sol if w==best_w and z==next_z][0]
+  answer+=str(best_w)
+print(answer)
