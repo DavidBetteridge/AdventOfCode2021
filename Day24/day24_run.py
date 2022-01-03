@@ -53,7 +53,7 @@ def parse_file(filename: str) -> List[Instruction]:
 
 def execute_instruction(instruction: Instruction, state: State) -> State:
   if instruction.operation == "inp":
-    val = int(input("Input value: "))
+    val = int(input(f"Input value {instruction.operand1}: "))
     return state.setValue(instruction.operand1, val)
   elif instruction.operation == "add":
     result = state.getValue(instruction.operand1) + state.getValue(instruction.operand2)
@@ -79,12 +79,12 @@ def execute_instruction(instruction: Instruction, state: State) -> State:
 
 import os
 os.system("cls")
-instructions = parse_file("day24/data.txt")
+instructions = parse_file("day24/data2.txt")
 
 state = State()
 for n, instruction in enumerate(instructions):
   state = execute_instruction(instruction, state)
-  print(state)    
+print(state)    
 
 
 

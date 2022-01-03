@@ -1,7 +1,6 @@
 from typing import List
 import numba
 
-@numba.jit(nopython=True)
 def solve():
   instru_a: List[int]=[
        1,

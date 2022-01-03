@@ -177,41 +177,10 @@ os.system("cls")
 instructions = parse_file("day24/data2.txt")
 state = ParseState()
 
-# state = state.setValue("w", f"INPUT1", list(range(1,10)))
-# state = state.setValue("x", f"INPUT2", [])
-# state = state.setValue("y", f"INPUT3", [])
-# state = state.setValue("z", f"INPUT4", [])
-
 for n, instruction in enumerate(instructions):
   state = parse_instruction(n+1, instruction, state)
 
 print("")
 print("")
 print(state.z)
-
-# Input 1,    w=input1   x=1,  y=input1+14   z=input1+14
-
-# # w 1..9
-# # x 0..1
-# # y 0 and 13..21
-# # z lots 14390875
-
-# # -12
-
-# (Z % 26) - 12 == W
-
-# Z % 26 = 12
-
-# Z = (n 26) + 12
-
-
-# INPUT2=12
-# INPUT3=12
-# for INPUT1 in range (-1000,1000):
-#   for INPUT4 in range (1, 10):
-#     # a = (((INPUT4/26)*((25*(1 if (1 if ((INPUT4 % 26)+-12)==INPUT1 else 0)==0 else 0))+1))+\
-#     #   ((INPUT1+12)*(1 if (1 if ((INPUT4 % 26)+-12)==INPUT1 else 0)==0 else 0)))
-#     a = (((INPUT4/26)*((((INPUT3*0)+25)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0))+1))+((((((((INPUT3*0)+25)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0))+1)*0)+INPUT1)+12)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0)))
-#     if a == 0:
-#       print(INPUT1, INPUT4)
 
