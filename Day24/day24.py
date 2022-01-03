@@ -8,35 +8,6 @@ class Instruction:
   operand1: str
   operand2: Optional[str]
 
-@dataclasses.dataclass(frozen=True)
-class State:
-  w: int = dataclasses.field(default=0)
-  x: int = dataclasses.field(default=0)
-  y: int = dataclasses.field(default=0)
-  z: int = dataclasses.field(default=0)
-
-  def setValue(self, variableName: str,  newValue: int) -> "State":
-    if variableName == "w":
-      return State(newValue, self.x, self.y, self.z)
-    elif variableName == "x":
-      return State(self.w, newValue, self.y, self.z)
-    elif variableName == "y":
-      return State(self.w, self.x, newValue, self.z)
-    elif variableName == "z":
-      return State(self.w, self.x, self.y, newValue)
-
-  def getValue(self, variableNameOrValue: str) -> int:
-    if variableNameOrValue == "w":
-      return self.w
-    elif variableNameOrValue == "x":
-      return self.x
-    elif variableNameOrValue == "y":
-      return self.y
-    elif variableNameOrValue == "z":
-      return self.z
-    else:
-      return int(variableNameOrValue)
-
 def parse_line(line: str) -> Instruction:
   parts = line.split(" ")
   if len(parts) == 2:
@@ -51,32 +22,6 @@ def parse_file(filename: str) -> List[Instruction]:
     return [parse_line(l.strip()) for l in lines]
 
 
-def execute_instruction(instruction: Instruction, state: State) -> State:
-  if instruction.operation == "inp":
-    val = int(input("Input value: "))
-    return state.setValue(instruction.operand1, val)
-  elif instruction.operation == "add":
-    result = state.getValue(instruction.operand1) + state.getValue(instruction.operand2)
-    return state.setValue(instruction.operand1, result)    
-  elif instruction.operation == "mul":
-    result = state.getValue(instruction.operand1) * state.getValue(instruction.operand2)
-    return state.setValue(instruction.operand1, result)
-  elif instruction.operation == "div":
-    result = math.floor(state.getValue(instruction.operand1) / state.getValue(instruction.operand2))
-    return state.setValue(instruction.operand1, result)
-  elif instruction.operation == "mod":
-    result = state.getValue(instruction.operand1) % state.getValue(instruction.operand2)
-    return state.setValue(instruction.operand1, result)    
-  elif instruction.operation == "eql":
-    if state.getValue(instruction.operand1) == state.getValue(instruction.operand2):
-      return state.setValue(instruction.operand1, 1)
-    else:
-      return state.setValue(instruction.operand1, 0)
-  else:
-    print(f"Not supported {instruction.operation}")
-
-
-
 @dataclasses.dataclass(frozen=True)
 class ParseState:
   w: str = dataclasses.field(default="0")
@@ -84,6 +29,10 @@ class ParseState:
   y: str = dataclasses.field(default="0")
   z: str = dataclasses.field(default="0")
   inputNumber: int = dataclasses.field(default=1)
+  possible_w: List[int] = dataclasses.field(default_factory= lambda : [0] )
+  possible_x: List[int] = dataclasses.field(default_factory= lambda : [0] )
+  possible_y: List[int] = dataclasses.field(default_factory= lambda : [0] )
+  possible_z: List[int] = dataclasses.field(default_factory= lambda : [0] )
 
   def getValue(self, variableNameOrValue: str) -> str:
     if variableNameOrValue in ["w","x", "y", "z"]:
@@ -92,17 +41,19 @@ class ParseState:
       return variableNameOrValue
 
   def nextInput(self) -> "ParseState":
-    return ParseState(self.w, self.x, self.y, self.z, self.inputNumber+1)
+    return ParseState(self.w, self.x, self.y, self.z, self.inputNumber+1, self.possible_w, self.possible_x, self.possible_y, self.possible_z)
 
-  def setValue(self, variableName: str,  newValue: int) -> "ParseState":
+  def setValue(self, variableName: str,
+               newValue: str,
+               possible_values: List[int]) -> "ParseState":
     if variableName == "w":
-      return ParseState(newValue, self.x, self.y, self.z, self.inputNumber)
+      return ParseState(newValue, self.x, self.y, self.z, self.inputNumber, possible_values, self.possible_x, self.possible_y, self.possible_z)
     elif variableName == "x":
-      return ParseState(self.w, newValue, self.y, self.z, self.inputNumber)
+      return ParseState(self.w, newValue, self.y, self.z, self.inputNumber, self.possible_w, possible_values, self.possible_y, self.possible_z)
     elif variableName == "y":
-      return ParseState(self.w, self.x, newValue, self.z, self.inputNumber)
+      return ParseState(self.w, self.x, newValue, self.z, self.inputNumber, self.possible_w, self.possible_x, possible_values, self.possible_z)
     elif variableName == "z":
-      return ParseState(self.w, self.x, self.y, newValue, self.inputNumber)
+      return ParseState(self.w, self.x, self.y, newValue, self.inputNumber, self.possible_w, self.possible_x, self.possible_y, possible_values)
 
   def getValue(self, variableNameOrValue: str) -> str:
     if variableNameOrValue == "w":
@@ -117,102 +68,150 @@ class ParseState:
       return variableNameOrValue
 
 
-def parse_instruction(instruction: Instruction, state: ParseState) -> ParseState:
+  def getPossibleValues(self, variableNameOrValue: str) -> List[int]:
+    if variableNameOrValue == "w":
+      return self.possible_w
+    elif variableNameOrValue == "x":
+      return self.possible_x
+    elif variableNameOrValue == "y":
+      return self.possible_y
+    elif variableNameOrValue == "z":
+      return self.possible_z
+    else:
+      return [int(variableNameOrValue)]
+
+
+def do_binary_operation(n: int, instruction: Instruction, state: ParseState, fn, expr: str) -> ParseState:
+  second = "" if instruction.operand2 is None else instruction.operand2
+  i = f"{instruction.operation} {instruction.operand1} {second}"
+  comment = ""  
+  
+  op1v = state.getPossibleValues(instruction.operand1)
+  op2v = state.getPossibleValues(instruction.operand2)
+  op1 = state.getValue(instruction.operand1)  
+  op2 = state.getValue(instruction.operand2)  
+
+  # Is there only one possible value?
+  if len(op1v) > 0 and len(op2v) > 0:
+    possible = set()
+    for a in op1v:
+      for b in op2v:
+        possible.add(fn(a, b))
+
+    if len(possible) == 1:
+      only_value = next(iter(possible))
+      state = state.setValue(instruction.operand1, only_value, [only_value])
+      comment = f"; {instruction.operand1} = {only_value}"
+      print(f"{n}: {i} {comment}")
+      return state
+
+    # Is the result always the first argument?
+    always_first = True
+    for a in op1v:
+      for b in op2v:
+        if fn(a, b) != a:
+          always_first = False
+    if always_first:          
+      state = state.setValue(instruction.operand1, op1, list(possible))
+      comment = f"; {instruction.operand1} = {op1}" 
+      print(f"{n}: {i} {comment}")
+      return state
+
+    # Is the result always the second argument?
+    always_second = True
+    for a in op1v:
+      for b in op2v:
+        if fn(a, b) != b:
+          always_second = False
+    if always_second:          
+      state = state.setValue(instruction.operand1, op2, list(possible))
+      comment = f"; {instruction.operand1} = {op2}" 
+      print(f"{n}: {i} {comment}")
+      return state    
+
+    state = state.setValue(instruction.operand1, expr, list(possible))
+    comment = f"; {instruction.operand1} = {expr}"
+  else:
+    # Too many values
+    state = state.setValue(instruction.operand1, expr, [])
+    comment = f"; {instruction.operand1} = {expr}"    
+
+  print(f"{n}: {i} {comment}")
+  return state
+
+def parse_instruction(n: int, instruction: Instruction, state: ParseState) -> ParseState:
   second = "" if instruction.operand2 is None else instruction.operand2
   i = f"{instruction.operation} {instruction.operand1} {second}"
   comment = ""
+  op1 = state.getValue(instruction.operand1)
+  op2 = state.getValue(instruction.operand2)  
 
   if instruction.operation == "inp":
-    state = state.setValue(instruction.operand1, f"INPUT{state.inputNumber}")
+    state = state.setValue(instruction.operand1, f"INPUT{state.inputNumber}", list(range(1,10)))
     comment = f"; {instruction.operand1} = INPUT{state.inputNumber}"
     state = state.nextInput()
 
   elif instruction.operation == "add":
-    op1 = state.getValue(instruction.operand1)
-    op2 = state.getValue(instruction.operand2)
-    if op1.isdigit() and op2.isdigit():
-      val = int(op1) + int(op2)
-      state = state.setValue(instruction.operand1, str(val))
-      comment = f"; {instruction.operand1} = {val}"
-    elif op1 in ["0", 0]:
-      state = state.setValue(instruction.operand1, op2)
-      comment = f"; {instruction.operand1} = {op2}"      
-    elif op1 == "(INPUT1+14)" and op2 == "13":      
-      state = state.setValue(instruction.operand1, f"(INPUT1+27)")
-      comment = f"; {instruction.operand1} = (INPUT1+27)"      
-    else:      
-      state = state.setValue(instruction.operand1, f"({op1}+{op2})")
-      comment = f"; {instruction.operand1} = {op1}+{op2}"
+    return do_binary_operation(n, instruction, state, lambda a,b: a+b, f"({op1}+{op2})") 
 
   elif instruction.operation == "mul":
-    op1 = state.getValue(instruction.operand1)
-    op2 = state.getValue(instruction.operand2)
-    if op1 in ["0", 0] or op2 in ["0", 0]:
-      state = state.setValue(instruction.operand1, "0")
-      comment = f"; {instruction.operand1} = 0"
-    elif op2 in ["1", 1]:
-      state = state.setValue(instruction.operand1, op1)
-      comment = f"; {instruction.operand1} = {op1}"      
-    else:
-      state = state.setValue(instruction.operand1, f"({op1} * {op2})")
-      comment = f"; {instruction.operand1} = {op1} * {op2}"
+    return do_binary_operation(n, instruction, state, lambda a,b: a*b, f"({op1}*{op2})") 
 
   elif instruction.operation == "div":
-    op1 = state.getValue(instruction.operand1)
-    op2 = state.getValue(instruction.operand2)
-    if op2 in ["1", 1]:
-      state = state.setValue(instruction.operand1, op1)
-      comment = f"; {instruction.operand1} = {op1}"    
-    else:      
-      state = state.setValue(instruction.operand1, f"({op1} / {op2})")
-      comment = f"; {instruction.operand1} = {op1} / {op2}" 
+    return do_binary_operation(n, instruction, state, lambda a,b: math.floor(a/b), f"({op1}/{op2})") 
 
   elif instruction.operation == "mod":
-    op1 = state.getValue(instruction.operand1)
-    op2 = state.getValue(instruction.operand2)
-    if op1 in ["0", 0]:
-      state = state.setValue(instruction.operand1, "0")
-      comment = f"; {instruction.operand1} = 0"
-    elif op1 == "(INPUT1+14)" and op2 == "26":
-      # Input1 can never be more than 9,  and 9+14 < 26
-      state = state.setValue(instruction.operand1, op1)
-      comment = f"; {instruction.operand1} = {op1}"
-    else:      
-      state = state.setValue(instruction.operand1, f"({op1} mod {op2})")
-      comment = f"; {instruction.operand1} = {op1} mod {op2}"    
+    return do_binary_operation(n, instruction, state, lambda a,b: a%b, f"({op1} % {op2})") 
 
   elif instruction.operation == "eql":
-    op1 = state.getValue(instruction.operand1)
-    op2 = state.getValue(instruction.operand2)
-
-    if op2.startswith("INPUT") and op1.isdigit() and (int(op1) > 10 or int(op1) < 1):
-      state = state.setValue(instruction.operand1, "0")
-      comment = f"; {instruction.operand1} = 0"
-    elif op1 == "(INPUT1+27)" and op2=="INPUT2":
-      #INPUT2 can not be more than 9
-      state = state.setValue(instruction.operand1, "0")
-      comment = f"; {instruction.operand1} = 0"      
-    elif op1 == op2:
-      state = state.setValue(instruction.operand1, "1")
-      comment = f"; {instruction.operand1} = 1"      
-    else:
-      state = state.setValue(instruction.operand1, f"(1 if {op1}=={op2} else 0)")
-      comment = f"; {instruction.operand1} = (1 if {op1}=={op2} else 0)"  
+    return do_binary_operation(n, instruction, state, lambda a,b: 1 if {a}=={b} else 0, f"(1 if {op1}=={op2} else 0)") 
 
   else:
     print(f"Not supported {instruction.operation}")
 
-  print(f"{i} {comment}")
+  print(f"{n}: {i} {comment}")
   return state
 
 import os
 os.system("cls")
-instructions = parse_file("day24/data.txt")
+instructions = parse_file("day24/data2.txt")
 state = ParseState()
-for instruction in instructions:
-  state = parse_instruction(instruction, state)
 
+# state = state.setValue("w", f"INPUT1", list(range(1,10)))
+# state = state.setValue("x", f"INPUT2", [])
+# state = state.setValue("y", f"INPUT3", [])
+# state = state.setValue("z", f"INPUT4", [])
+
+for n, instruction in enumerate(instructions):
+  state = parse_instruction(n+1, instruction, state)
+
+print("")
+print("")
+print(state.z)
 
 # Input 1,    w=input1   x=1,  y=input1+14   z=input1+14
 
+# # w 1..9
+# # x 0..1
+# # y 0 and 13..21
+# # z lots 14390875
+
+# # -12
+
+# (Z % 26) - 12 == W
+
+# Z % 26 = 12
+
+# Z = (n 26) + 12
+
+
+# INPUT2=12
+# INPUT3=12
+# for INPUT1 in range (-1000,1000):
+#   for INPUT4 in range (1, 10):
+#     # a = (((INPUT4/26)*((25*(1 if (1 if ((INPUT4 % 26)+-12)==INPUT1 else 0)==0 else 0))+1))+\
+#     #   ((INPUT1+12)*(1 if (1 if ((INPUT4 % 26)+-12)==INPUT1 else 0)==0 else 0)))
+#     a = (((INPUT4/26)*((((INPUT3*0)+25)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0))+1))+((((((((INPUT3*0)+25)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0))+1)*0)+INPUT1)+12)*(1 if (1 if (((INPUT2*0)+INPUT4)+-12)==INPUT1 else 0)==0 else 0)))
+#     if a == 0:
+#       print(INPUT1, INPUT4)
 
