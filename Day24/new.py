@@ -255,59 +255,91 @@ def solve_stage(target: List[int], stage_fn):
     if (t:=stage_fn(w,z)) in (target)
   ])
 
+solutions = {}
 
 sol = solve_stage([0], stage14)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[14]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage13)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[13]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage12)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[12]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage11)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[11]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage10)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[10]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage9)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[9]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage8)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[8]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage7)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[7]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage6)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[6]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage5)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[5]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage4)
 zs = set([z for z,_,_ in sol])
-print(zs)
+solutions[4]=sol
+#print(zs)
 
 sol = solve_stage(zs, stage3)
 zs = set([z for z,_,_ in sol])
-print(sol)
+solutions[3]=sol
 
 sol = solve_stage(zs, stage2)
 zs = set([z for z,_,_ in sol])
-print(sol)
+solutions[2]=sol
 
 sol = solve_stage(zs, stage1)
 zs = set([z for z,_,_ in sol])
-print(sol)
+solutions[1]=sol
+
+#print(solutions)
+
+answer=""
+sol = solutions[1]
+best_w = max(w for _,w,t in sol)
+assert len([t for _,w,t in sol if w==best_w]) == 1
+next_z = [t for _,w,t in sol if w==best_w][0]
+answer+=str(best_w)
+
+for s in range(2,15):
+  sol = solutions[s]
+  best_w = max(w for z,w,t in sol if z==next_z)
+  next_z = [t for z,w,t in sol if w==best_w and z==next_z][0]
+  answer+=str(best_w)
+
+
+print(answer)
+
+#74999295119389 to high
