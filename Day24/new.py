@@ -86,10 +86,9 @@ class ParseState:
 
 
 
-def do_binary_operation(n: int, instruction: Instruction, state: ParseState, fn, expr: str) -> ParseState:
+def do_binary_operation(instruction: Instruction, state: ParseState, fn, expr: str) -> ParseState:
   second = "" if instruction.operand2 is None else instruction.operand2
   i = f"{instruction.operation} {instruction.operand1} {second}"
-  comment = ""  
   
   op1v = state.getPossibleValues(instruction.operand1)
   op2v = state.getPossibleValues(instruction.operand2)
@@ -106,8 +105,6 @@ def do_binary_operation(n: int, instruction: Instruction, state: ParseState, fn,
     if len(possible) == 1:
       only_value = next(iter(possible))
       state = state.setValue(instruction.operand1, only_value, [only_value])
-      comment = f"; {instruction.operand1} = {only_value}"
-      print(f"{n}: {i} {comment}")
       return state
 
     # Is the result always the first argument?
@@ -118,8 +115,6 @@ def do_binary_operation(n: int, instruction: Instruction, state: ParseState, fn,
           always_first = False
     if always_first:          
       state = state.setValue(instruction.operand1, op1, list(possible))
-      comment = f"; {instruction.operand1} = {op1}" 
-      print(f"{n}: {i} {comment}")
       return state
 
     # Is the result always the second argument?
@@ -130,46 +125,38 @@ def do_binary_operation(n: int, instruction: Instruction, state: ParseState, fn,
           always_second = False
     if always_second:          
       state = state.setValue(instruction.operand1, op2, list(possible))
-      comment = f"; {instruction.operand1} = {op2}" 
-      print(f"{n}: {i} {comment}")
       return state    
 
     state = state.setValue(instruction.operand1, expr, list(possible))
-    comment = f"; {instruction.operand1} = {expr}"
   else:
     # Too many values
     state = state.setValue(instruction.operand1, expr, [])
-    comment = f"; {instruction.operand1} = {expr}"    
 
-  print(f"{n}: {i} {comment}")
   return state
 
-def parse_instruction(n: int, instruction: Instruction, state: ParseState) -> ParseState:
+def parse_instruction(instruction: Instruction, state: ParseState) -> ParseState:
   second = "" if instruction.operand2 is None else instruction.operand2
   i = f"{instruction.operation} {instruction.operand1} {second}"
-  comment = ""
   op1 = state.getValue(instruction.operand1)
   op2 = state.getValue(instruction.operand2)  
 
   if instruction.operation == "inp":
     state = state.setValue(instruction.operand1, f"INPUT_{instruction.operand1.upper()}", list(range(1,10)))
-    comment = f"; {instruction.operand1} = INPUT_{instruction.operand1.upper()}"
-    print(f"{n}: {i} {comment}")
 
   elif instruction.operation == "add":
-    return do_binary_operation(n, instruction, state, lambda a,b: a+b, f"({op1}+{op2})") 
+    return do_binary_operation(instruction, state, lambda a,b: a+b, f"({op1}+{op2})") 
 
   elif instruction.operation == "mul":
-    return do_binary_operation(n, instruction, state, lambda a,b: a*b, f"({op1}*{op2})") 
+    return do_binary_operation(instruction, state, lambda a,b: a*b, f"({op1}*{op2})") 
 
   elif instruction.operation == "div":
-    return do_binary_operation(n, instruction, state, lambda a,b: math.floor(a/b), f"math.floor({op1}/{op2})") 
+    return do_binary_operation(instruction, state, lambda a,b: math.floor(a/b), f"math.floor({op1}/{op2})") 
 
   elif instruction.operation == "mod":
-    return do_binary_operation(n, instruction, state, lambda a,b: a%b, f"({op1} % {op2})") 
+    return do_binary_operation(instruction, state, lambda a,b: a%b, f"({op1} % {op2})") 
 
   elif instruction.operation == "eql":
-    return do_binary_operation(n, instruction, state, lambda a,b: 1 if {a}=={b} else 0, f"(1 if {op1}=={op2} else 0)") 
+    return do_binary_operation(instruction, state, lambda a,b: 1 if {a}=={b} else 0, f"(1 if {op1}=={op2} else 0)") 
 
   else:
     print(f"Not supported {instruction.operation}")
@@ -180,72 +167,16 @@ def parse_instruction(n: int, instruction: Instruction, state: ParseState) -> Pa
 
 instructions = parse_file("C:\Personal\AdventOfCode2021\day24/data.txt")
 stages = split_instructions_into_stages(instructions)
-
-# zs2=[]
-# for z in range(15,24):
-#   for w in range(1, 10):
-#     zs2.append((z*26)+(w+8)  )
-
-# zs3=[]
-# for z in zs2:
-#   for w in range(1, 10):
-#     zs3.append((z*26)+(w+4)  )
-# print(len(zs3))
+lambdas = {}
 
 
-# zs4=[]
-# for z in zs3:
-#   for w in range(1, 10):
-#     zs4.append((z*26)+(w+10)  )
-# print(len(zs4))
-
-# state = ParseState()
-# state = state.setValue("z", f"INPUT_Z", [])
-# for n, i in enumerate(stages[-14]):
-#   state = parse_instruction(n,i,state)
-
-
-def stage14(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)-12)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)-12)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+12)*(1 if (1 if (((0+INPUT_Z) % 26)-12)==INPUT_W else 0)==0 else 0)))
-
-def stage13(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+13)*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0)))
-
-def stage12(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-6)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-6)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+9)*(1 if (1 if (((0+INPUT_Z) % 26)+-6)==INPUT_W else 0)==0 else 0)))
-
-def stage11(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+14)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+14)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+0)*(1 if (1 if (((0+INPUT_Z) % 26)+14)==INPUT_W else 0)==0 else 0)))
-
-def stage10(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-12)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-12)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+6)*(1 if (1 if (((0+INPUT_Z) % 26)+-12)==INPUT_W else 0)==0 else 0)))
-
-def stage9(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+1)*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0)))
-
-def stage8(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-8)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-8)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+14)*(1 if (1 if (((0+INPUT_Z) % 26)+-8)==INPUT_W else 0)==0 else 0)))
-
-def stage7(INPUT_W,INPUT_Z):
-  return  ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+12)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+12)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+4)*(1 if (1 if (((0+INPUT_Z) % 26)+12)==INPUT_W else 0)==0 else 0)))
-
-def stage6(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-4)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-4)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+10)*(1 if (1 if (((0+INPUT_Z) % 26)+-4)==INPUT_W else 0)==0 else 0)))
-
-def stage5(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/26)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+14)*(1 if (1 if (((0+INPUT_Z) % 26)+-3)==INPUT_W else 0)==0 else 0)))
-
-def stage4(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+10)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+10)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+10)*(1 if (1 if (((0+INPUT_Z) % 26)+10)==INPUT_W else 0)==0 else 0)))
-
-def stage3(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+4)*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0)))
-
-def stage2(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+13)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+13)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+8)*(1 if (1 if (((0+INPUT_Z) % 26)+13)==INPUT_W else 0)==0 else 0)))
-
-def stage1(INPUT_W,INPUT_Z):
-  return ((math.floor(INPUT_Z/1)*((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1))+((((((25*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0))+1)*0)+INPUT_W)+14)*(1 if (1 if (((0+INPUT_Z) % 26)+11)==INPUT_W else 0)==0 else 0)))
+for stage_number in range(len(stages)):
+  state = ParseState()
+  state = state.setValue("z", f"INPUT_Z", [])
+  for i in stages[stage_number]:
+    state = parse_instruction(i,state)
+  fn = state.z
+  exec("lambdas[stage_number+1] = lambda INPUT_W,INPUT_Z : " + fn)
 
 def solve_stage(target: List[int], stage_fn):
   return ([
@@ -257,78 +188,16 @@ def solve_stage(target: List[int], stage_fn):
 
 solutions = {}
 
-sol = solve_stage([0], stage14)
-zs = set([z for z,_,_ in sol])
-solutions[14]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage13)
-zs = set([z for z,_,_ in sol])
-solutions[13]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage12)
-zs = set([z for z,_,_ in sol])
-solutions[12]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage11)
-zs = set([z for z,_,_ in sol])
-solutions[11]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage10)
-zs = set([z for z,_,_ in sol])
-solutions[10]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage9)
-zs = set([z for z,_,_ in sol])
-solutions[9]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage8)
-zs = set([z for z,_,_ in sol])
-solutions[8]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage7)
-zs = set([z for z,_,_ in sol])
-solutions[7]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage6)
-zs = set([z for z,_,_ in sol])
-solutions[6]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage5)
-zs = set([z for z,_,_ in sol])
-solutions[5]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage4)
-zs = set([z for z,_,_ in sol])
-solutions[4]=sol
-#print(zs)
-
-sol = solve_stage(zs, stage3)
-zs = set([z for z,_,_ in sol])
-solutions[3]=sol
-
-sol = solve_stage(zs, stage2)
-zs = set([z for z,_,_ in sol])
-solutions[2]=sol
-
-sol = solve_stage(zs, stage1)
-zs = set([z for z,_,_ in sol])
-solutions[1]=sol
+zs = [0]
+for stage_number in range(len(stages),0,-1):
+  sol = solve_stage(zs, lambdas[stage_number])
+  zs = set([z for z,_,_ in sol])
+  solutions[stage_number]=sol
 
 
 answer=""
 sol = solutions[1]
 best_w = max(w for _,w,t in sol)
-assert len([t for _,w,t in sol if w==best_w]) == 1
 next_z = [t for _,w,t in sol if w==best_w][0]
 answer+=str(best_w)
 
@@ -340,18 +209,15 @@ for s in range(2,15):
 print(answer)
 
 
-
-
 answer=""
 sol = solutions[1]
 best_w = min(w for _,w,t in sol)
-assert len([t for _,w,t in sol if w==best_w]) == 1
 next_z = [t for _,w,t in sol if w==best_w][0]
-answer+=str(best_w)
+answer+=str(best_w)   #74929995999389
 
 for s in range(2,15):
   sol = solutions[s]
   best_w = min(w for z,w,t in sol if z==next_z)
   next_z = [t for z,w,t in sol if w==best_w and z==next_z][0]
   answer+=str(best_w)
-print(answer)
+print(answer)         #11118151637112
